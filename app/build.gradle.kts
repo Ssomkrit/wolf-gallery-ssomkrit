@@ -15,14 +15,15 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "dev.encgallery"
     compileSdk = 35
+    ndkVersion = "27.2.12479018"
 
     defaultConfig {
         applicationId = "dev.encgallery"
         minSdk = 28
         targetSdk = 35
 
-        versionCode = 6
-        versionName = "1.3.2"
+        versionCode = 7
+        versionName = "1.3.3"
 
         ndk {
             abiFilters += listOf("arm64-v8a")
