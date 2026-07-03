@@ -1,0 +1,1 @@
+Maintenance release. The build is now fully reproducible for F-Droid verification: the embedded version-control info was removed and the native build path is normalized, so the APK no longer depends on the build environment. No changes to features, encryption, or your data.

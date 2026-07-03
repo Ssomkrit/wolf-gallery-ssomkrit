@@ -21,8 +21,8 @@ android {
         minSdk = 28
         targetSdk = 35
 
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.3.1"
 
         ndk {
             abiFilters += listOf("arm64-v8a")
@@ -58,6 +58,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            vcsInfo {
+                include = false
+            }
 
             signingConfig = if (keystorePropsFile.exists())
                 signingConfigs.getByName("release")

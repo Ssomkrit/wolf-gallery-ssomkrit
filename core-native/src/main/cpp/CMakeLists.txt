@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("encnative" LANGUAGES C CXX)
 
+# Reproducible builds: never let the absolute build path leak into the binary.
+# Remaps the source root to "." for __FILE__, macros and debug records, so a
+# Windows dev build and F-Droid's Linux build produce a byte-identical .so.
+add_compile_options("-ffile-prefix-map=${CMAKE_SOURCE_DIR}=.")
+
 # ─── Vendored Argon2 reference (BSD/Apache, see vendor/argon2/LICENSE) ────────
 #
 # Built as a private STATIC archive and linked into libencnative.so. We never
