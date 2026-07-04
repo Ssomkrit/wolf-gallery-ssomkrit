@@ -56,10 +56,16 @@ target_link_libraries(encnative
 #   -z relro       : mark relocation sections read-only after dynamic linking
 #   -z now         : resolve all symbols at load time (full RELRO)
 #   -z noexecstack : never mark the stack executable
+#   --build-id=none: drop the .note.gnu.build-id. The default build-id is a
+#                    hash that varies with the build host/paths, so it is the
+#                    one part of the .so that will not reproduce across
+#                    machines. Removing it makes the shared library byte-
+#                    identical between any Linux build and F-Droid's server.
 target_link_options(encnative PRIVATE
     "-Wl,-z,relro"
     "-Wl,-z,now"
     "-Wl,-z,noexecstack"
+    "-Wl,--build-id=none"
 )
 
 # Strip release builds so reverse-engineering doesn't get the symbol table
