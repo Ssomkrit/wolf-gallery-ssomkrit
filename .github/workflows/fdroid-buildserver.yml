@@ -67,12 +67,31 @@ jobs:
           YML
           echo "--- recipe ---"; cat data/metadata/dev.encgallery.yml
 
+      - name: Locate fdroid
+        id: loc
+        shell: bash
+        run: |
+          export PATH="/home/vagrant/.local/bin:/opt/fdroidserver:/usr/local/bin:$PATH"
+          FDROID="$(command -v fdroid || true)"
+          if [ -z "$FDROID" ]; then
+            FDROID="$(find /home /opt /usr/local /usr/lib -maxdepth 6 -type f -name fdroid 2>/dev/null | head -1)"
+          fi
+          if [ -z "$FDROID" ]; then
+            python3 -m pip install --break-system-packages fdroidserver 2>/dev/null || python3 -m pip install fdroidserver
+            FDROID="$(command -v fdroid)"
+          fi
+          echo "fdroid=$FDROID" >> "$GITHUB_OUTPUT"
+          echo "Found fdroid at: $FDROID"
+          "$FDROID" --version || python3 -c "import fdroidserver, sys; print(fdroidserver.__version__)"
+
       - name: fdroid build
         working-directory: data
+        shell: bash
         run: |
           export ANDROID_HOME=/opt/android-sdk
           export ANDROID_SDK_ROOT=/opt/android-sdk
-          fdroid build --verbose --no-tarball "${{ github.event.inputs.appver }}"
+          export PATH="/home/vagrant/.local/bin:/opt/fdroidserver:/usr/local/bin:$PATH"
+          "${{ steps.loc.outputs.fdroid }}" build --verbose --no-tarball "${{ github.event.inputs.appver }}"
 
       - name: Hash built APK
         working-directory: data
