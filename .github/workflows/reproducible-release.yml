@@ -1,0 +1,62 @@
+name: Reproducible Release Build
+
+# Builds the release APK on Linux (ubuntu) so its bytes match the F-Droid
+# build server. The signing key is NOT present in CI: this job produces the
+# unsigned release content only, which is downloaded and signed locally.
+# See META-INF handling — F-Droid copies the developer signature onto its own
+# build, so only the pre-signature content has to be byte-identical.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git tag or commit to build"
+        required: true
+        default: "v1.3.3"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ${{ github.event.inputs.ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install pinned NDK, CMake, build-tools, platform
+        run: |
+          sdkmanager --install \
+            "ndk;27.2.12479018" \
+            "cmake;3.22.1" \
+            "build-tools;35.0.0" \
+            "platforms;android-35"
+
+      - name: Build release (unsigned content on Linux)
+        run: ./gradlew --no-daemon clean :app:assembleRelease
+
+      - name: Locate and hash APK
+        id: apk
+        run: |
+          f=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "Built: $f"
+          sha256sum "$f"
+          echo "path=$f" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wolf-gallery-release-linux
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
