@@ -44,7 +44,9 @@ jobs:
             "platforms;android-35"
 
       - name: Build release (unsigned content on Linux)
-        run: ./gradlew --no-daemon clean :app:assembleRelease
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon clean :app:assembleRelease
 
       - name: Locate and hash APK
         id: apk
