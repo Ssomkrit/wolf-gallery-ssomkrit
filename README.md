@@ -17,9 +17,9 @@
 
 <a href="https://github.com/Wolf-Project777/wolf-gallery/releases/latest"><img alt="Get it on GitHub" src="https://raw.githubusercontent.com/Wolf-Project777/wolf-gallery/main/assets/get-it-on-github.png" width="240"></a>
 
-<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/Wolf-Project777/wolf-gallery"><img alt="Get it on Obtainium" src="https://raw.githubusercontent.com/Wolf-Project777/wolf-gallery/main/assets/get-it-on-obtainium.png" width="240"></a>
+<a href="https://f-droid.org/packages/dev.encgallery/"><img alt="Get it on F-Droid" src="https://raw.githubusercontent.com/Wolf-Project777/wolf-gallery/main/assets/get-it-on-fdroid.png" width="240"></a>
 
-<sub>F-Droid coming soon.</sub>
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/Wolf-Project777/wolf-gallery"><img alt="Get it on Obtainium" src="https://raw.githubusercontent.com/Wolf-Project777/wolf-gallery/main/assets/get-it-on-obtainium.png" width="240"></a>
 
 </div>
 
