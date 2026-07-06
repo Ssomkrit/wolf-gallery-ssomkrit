@@ -53,7 +53,6 @@ fun AlbumDetailScreen(
     onExportSelection: (Set<String>) -> Unit = {},
     onRenameRequest: (uuid: String, newName: String) -> Unit = { _, _ -> },
     onSetWallpaperRequest: (uuid: String, target: WallpaperTarget) -> Unit = { _, _ -> },
-    onImportComplete: () -> Unit,
 
     searchQuery: String = "",
 
@@ -181,8 +180,7 @@ fun AlbumDetailScreen(
             if (!isSearching) {
                 ImportPanel(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    targetAlbumUuid = albumMeta.uuid,
-                    onBatchComplete = onImportComplete
+                    targetAlbumUuid = albumMeta.uuid
                 )
 
                 Spacer(Modifier.height(16.dp))

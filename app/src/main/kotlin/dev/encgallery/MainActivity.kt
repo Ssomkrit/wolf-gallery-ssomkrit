@@ -697,7 +697,7 @@ private fun SkeletonContent(
         }
     }
 
-    LaunchedEffect(refreshTrigger, importedAlbumName) {
+    LaunchedEffect(refreshTrigger, importedAlbumName, dev.encgallery.gallery.ImportController.completedBatches) {
         val (freshEntries, freshAlbums, freshGroups) = withContext(Dispatchers.IO) {
             val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
             val albumsRepo = AlbumsRepository(keystore)
@@ -1977,7 +1977,6 @@ private fun SkeletonContent(
                         onExportSelection = handleExportSelection,
                         onRenameRequest = handleRenameRequest,
                         onSetWallpaperRequest = handleSetWallpaperRequest,
-                        onImportComplete = { refreshTrigger++ },
                         searchQuery = if (searchActive) searchQuery else "",
                         enlarged = photoGridEnlarged,
 
@@ -2001,7 +2000,6 @@ private fun SkeletonContent(
                                 onExportSelection = handleExportSelection,
                                 onRenameRequest = handleRenameRequest,
                                 onSetWallpaperRequest = handleSetWallpaperRequest,
-                                onImportComplete = { refreshTrigger++ },
                                 searchQuery = if (searchActive) searchQuery else "",
                                 enlarged = photoGridEnlarged
                             )

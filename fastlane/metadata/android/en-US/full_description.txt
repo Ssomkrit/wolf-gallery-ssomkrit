@@ -1,39 +1,23 @@
 Wolf Gallery is an offline gallery that keeps your photos and videos encrypted on the device.
 
-Each file is stored as ciphertext in the app's private storage, so other apps and the system only ever see encrypted data. Files are decrypted on demand. That includes sharing to another app and setting a wallpaper, so media is not written out in the clear. You can use it as your main gallery or keep it next to the stock one as a private vault.
+Each file is stored as ciphertext in the app's private storage, so other apps and the system only ever see encrypted data. Files are decrypted on demand, including when you share to another app or set a wallpaper, so your media is never written out in the clear. You can use it as your main gallery or keep it next to the stock one as a private vault.
 
 Development is active and ongoing.
 
-= Security =
+**Security**
 
-* Every file is encrypted in an isolated vault inside the app's private storage.
-* No INTERNET permission. No accounts, no cloud, no telemetry, no trackers. The app cannot reach the network.
-* AES-256-GCM authenticated encryption, so tampering is detected on decryption.
-* Argon2id password-based key derivation (the memory-hard Password Hashing Competition winner). The passphrase is never stored.
-* The vault key is wrapped with an Argon2id key on top of the hardware-backed Android Keystore, so both the device and your password or PIN are needed to decrypt.
-* Quantum-resistant by design: the vault is symmetric-only (AES-256), with no asymmetric key exchange. There is nothing for Shor's algorithm to break, and "harvest now, decrypt later" does not apply to a local vault. Against Grover's algorithm AES-256 keeps about 128-bit strength.
-* Native C/C++ crypto core that zeroes key material in memory after use.
-* FLAG_SECURE blocks screenshots and Recents previews. Wrong unlock attempts are slowed by exponential backoff, with an optional wipe after a set number of failures.
-* An in-app self-test screen runs the crypto, file-format and migration checks on the device.
+Every file is encrypted in an isolated vault inside the app's private storage. There is no internet permission and no accounts, cloud, telemetry or trackers, so the app simply cannot reach the network. Encryption uses authenticated AES-256-GCM, so any tampering is detected on decryption, and keys are derived from your passphrase with Argon2id, the memory-hard winner of the Password Hashing Competition. Your passphrase is never stored. The vault key is wrapped with an Argon2id key on top of the hardware-backed Android Keystore, so both the device and your password or PIN are needed to decrypt. The vault is symmetric-only, which makes it quantum-resistant by design, and a native crypto core zeroes key material in memory after use. Screenshots and Recents previews are blocked, wrong unlock attempts are slowed by exponential backoff, and an optional wipe after a set number of failures is available. A built-in self-test screen runs the crypto, file-format and migration checks right on your device.
 
-= Organize =
+**Organize**
 
-* Groups and albums created inside the app.
-* Rename with emoji and symbols.
-* Sort, search and pin groups, albums and files.
-* Album covers from any picture, with adjustable framing.
-* Import and export on your terms.
-* Share to other apps and set as wallpaper directly from the vault.
+Create groups and albums inside the app and rename anything, including with emoji. Sort, search and pin your groups, albums and files, set an album cover from any picture with adjustable framing, and import or export on your own terms. You can share to other apps or set a wallpaper directly from the vault.
 
-= Appearance =
+**Appearance**
 
-* Several themes, including pure-black dark modes, with a custom accent color.
-* Adjustable grid density, rounded or square thumbnails, and a top- or bottom-placed action bar.
+Choose from several themes, including pure-black dark modes, paired with a custom accent color. Adjust the grid density, switch thumbnails and albums between rounded and square corners, and place the action bar at the top or the bottom to suit your grip.
 
-= Other =
+**Other**
 
-* Built-in trash with undo.
-* First-run setup wizard.
-* Available in several languages, with more translations in progress.
+A built-in trash keeps deletions undoable, a first-run wizard makes setup effortless, and the app is available in several languages with more translations on the way.
 
 Part of Wolf Project. Open-source, offline, no accounts.

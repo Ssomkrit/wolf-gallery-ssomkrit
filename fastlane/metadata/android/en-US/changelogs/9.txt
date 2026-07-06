@@ -1,0 +1,1 @@
+Import fixes. Videos reported as an unknown type by some file managers, including many MP4 files, now import correctly. Imports also keep running when you switch screens, open the search bar, or briefly leave the app, and opening search no longer cancels an import already in progress.

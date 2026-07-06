@@ -70,10 +70,11 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
             val humanIndex = index + 1
             onProgress(Progress.FileStarted(humanIndex, total, displayName))
 
-            val mime = context.contentResolver.getType(uri)
-            if (!SupportedMimeTypes.isAccepted(mime)) {
+            val declaredMime = context.contentResolver.getType(uri)?.lowercase()
+            val mime = resolveMime(context, uri, declaredMime)
+            if (mime == null) {
                 failed++
-                val reason = "unsupported MIME: ${mime ?: "<null>"}"
+                val reason = "unsupported type: ${declaredMime ?: "<null>"}"
 
                 EncLog.w(
                     TAG,
@@ -102,7 +103,7 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
                 val thumbDuration = generateAndStoreThumbnail(
                     context = context,
                     uri = uri,
-                    mime = mime!!,
+                    mime = mime,
                     thumbFile = names.thumb
                 )
                 if (thumbDuration != null) {
@@ -183,6 +184,40 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
 
     companion object {
         private const val TAG = "PhotoImporter"
+
+        private fun resolveMime(
+            context: Context,
+            uri: Uri,
+            declaredMime: String?
+        ): String? {
+            if (SupportedMimeTypes.isAccepted(declaredMime)) return declaredMime
+
+            val sniffed = sniffUri(context, uri)
+            if (SupportedMimeTypes.isAccepted(sniffed)) {
+                EncLog.i(
+                    TAG,
+                    "declared MIME '${declaredMime ?: "<null>"}' not accepted; sniffed '$sniffed'"
+                )
+                return sniffed
+            }
+            return null
+        }
+
+        private fun sniffUri(context: Context, uri: Uri): String? = try {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                val header = ByteArray(MimeSniffer.HEADER_BYTES)
+                var off = 0
+                while (off < header.size) {
+                    val read = stream.read(header, off, header.size - off)
+                    if (read < 0) break
+                    off += read
+                }
+                if (off < 8) null else MimeSniffer.sniff(header.copyOf(off))
+            }
+        } catch (t: Throwable) {
+            EncLog.w(TAG, "sniff(uri) failed: ${t.javaClass.simpleName}")
+            null
+        }
 
         private fun queryDisplayName(context: Context, uri: Uri): String? = try {
             context.contentResolver.query(

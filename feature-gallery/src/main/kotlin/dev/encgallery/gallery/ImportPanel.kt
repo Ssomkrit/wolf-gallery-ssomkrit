@@ -26,85 +26,28 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import dev.encgallery.crypto.KeystoreAesGcm
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun ImportPanel(
     modifier: Modifier = Modifier,
-    targetAlbumUuid: String? = null,
-    onBatchComplete: () -> Unit = {}
+    targetAlbumUuid: String? = null
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val appContext = context.applicationContext
 
-    var importing by remember { mutableStateOf(false) }
-    var currentIndex by remember { mutableIntStateOf(0) }
-    var currentTotal by remember { mutableIntStateOf(0) }
-    var currentDisplayName by remember { mutableStateOf("") }
-
-    var lastSummary by remember { mutableStateOf("") }
+    val importing = ImportController.importing
+    val currentIndex = ImportController.currentIndex
+    val currentTotal = ImportController.currentTotal
+    val currentDisplayName = ImportController.currentDisplayName
 
     val runImport: (List<Uri>) -> Unit = { uris ->
-        importing = true
-        lastSummary = ""
-        currentIndex = 0
-        currentTotal = uris.size
-        currentDisplayName = ""
-
-        scope.launch {
-            val importer = PhotoImporter(KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS))
-            try {
-                withContext(Dispatchers.IO) {
-                    val effectiveTarget = targetAlbumUuid ?: VaultPaths.IMPORTED_ALBUM_UUID
-                    importer.importAll(
-                        context.applicationContext,
-                        uris,
-                        targetAlbumUuid = effectiveTarget
-                    ) { progress ->
-                        when (progress) {
-                            is PhotoImporter.Progress.Started -> {
-                                currentTotal = progress.total
-                            }
-                            is PhotoImporter.Progress.FileStarted -> {
-                                currentIndex = progress.index
-                                currentTotal = progress.total
-                                currentDisplayName = progress.displayName
-                            }
-                            is PhotoImporter.Progress.FileSucceeded -> {
-                                currentIndex = progress.index
-                            }
-                            is PhotoImporter.Progress.FileFailed -> {
-                                currentIndex = progress.index
-                            }
-                            is PhotoImporter.Progress.Done -> {
-                                lastSummary = formatSummary(
-                                    context, progress.successful, progress.failed, progress.total
-                                )
-                                onBatchComplete()
-                            }
-                        }
-                    }
-                }
-            } finally {
-                importing = false
-                currentDisplayName = ""
-            }
-        }
+        ImportController.start(appContext, uris, targetAlbumUuid)
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -197,7 +140,7 @@ fun ImportPanel(
             )
         }
 
-        if (!importing && lastSummary.isNotEmpty()) {
+        if (!importing && ImportController.hasSummary) {
             Spacer(Modifier.height(12.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -208,7 +151,12 @@ fun ImportPanel(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(12.dp),
-                    text = lastSummary,
+                    text = formatSummary(
+                        context,
+                        ImportController.lastSuccessful,
+                        ImportController.lastFailed,
+                        ImportController.lastTotal
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
