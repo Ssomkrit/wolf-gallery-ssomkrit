@@ -4,20 +4,30 @@ Each file is stored as ciphertext in the app's private storage, so other apps an
 
 Development is active and ongoing.
 
-**Security**
+<b>Security</b>
 
 Every file is encrypted in an isolated vault inside the app's private storage. There is no internet permission and no accounts, cloud, telemetry or trackers, so the app simply cannot reach the network. Encryption uses authenticated AES-256-GCM, so any tampering is detected on decryption, and keys are derived from your passphrase with Argon2id, the memory-hard winner of the Password Hashing Competition. Your passphrase is never stored. The vault key is wrapped with an Argon2id key on top of the hardware-backed Android Keystore, so both the device and your password or PIN are needed to decrypt. The vault is symmetric-only, which makes it quantum-resistant by design, and a native crypto core zeroes key material in memory after use. Screenshots and Recents previews are blocked, wrong unlock attempts are slowed by exponential backoff, and an optional wipe after a set number of failures is available. A built-in self-test screen runs the crypto, file-format and migration checks right on your device.
 
-**Organize**
+<b>Organize</b>
 
 Create groups and albums inside the app and rename anything, including with emoji. Sort, search and pin your groups, albums and files, set an album cover from any picture with adjustable framing, and import or export on your own terms. You can share to other apps or set a wallpaper directly from the vault.
 
-**Appearance**
+<b>Appearance</b>
 
 Choose from several themes, including pure-black dark modes, paired with a custom accent color. Adjust the grid density, switch thumbnails and albums between rounded and square corners, and place the action bar at the top or the bottom to suit your grip.
 
-**Other**
+<b>Other</b>
 
 A built-in trash keeps deletions undoable, a first-run wizard makes setup effortless, and the app is available in several languages with more translations on the way.
+
+<b>Support development</b>
+
+Wolf Gallery is free and open-source, with no ads, accounts or trackers. If it helps you, donations are welcome in privacy-first coins, no KYC.
+
+Monero:
+42nfQ6zMT9jbLM2XGwNLLX137s8RkYRrhhJSqrFFZvCwcWegttcMQJZ85gTG6niredYWfRP6FYoEtPKYDDWQ63CM8hT5xzK
+
+Zcash (shielded):
+u1hwe88n4r8zz8958ssr02swq3svxmpqxq5uzhn3sp3zkjna39ymphtkc4egc2w0s4pxvhemmw2cw89gz7qzkzxvhnhrywwhm0aaq706h0a8p7jc447m59nululu77y42x2u6n056jwyvclphau2tu9jayt4c4szzkrjh5vxtrd587rx65
 
 Part of Wolf Project. Open-source, offline, no accounts.

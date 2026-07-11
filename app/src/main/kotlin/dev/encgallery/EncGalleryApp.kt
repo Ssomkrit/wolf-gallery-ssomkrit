@@ -12,6 +12,13 @@ class EncGalleryApp : Application() {
         super.onCreate()
 
         EncLog.init(filesDir = filesDir, enabled = false)
+
+        val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            EncLog.crash(thread, throwable)
+            previousHandler?.uncaughtException(thread, throwable)
+        }
+
         AppSettings.init(this)
 
         VaultDataKey.init(this)

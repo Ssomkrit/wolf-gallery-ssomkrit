@@ -1230,7 +1230,6 @@ private fun AlbumSelectionBottomBar(
     optionsAnchorModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
-    val sysBars = WindowInsets.systemBars.asPaddingValues()
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
@@ -1243,7 +1242,7 @@ private fun AlbumSelectionBottomBar(
                 .padding(
                     start = 8.dp, end = 8.dp,
                     top = 6.dp,
-                    bottom = 6.dp + sysBars.calculateBottomPadding()
+                    bottom = 6.dp
                 ),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically

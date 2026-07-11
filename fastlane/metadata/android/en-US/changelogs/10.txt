@@ -1,0 +1,11 @@
+New in version 1.3.6
+
+Improved stability
+
+Fixed:
+- The app could close right after you entered the correct password or PIN on some devices
+- An empty strip appeared at the bottom of the screen while selecting photos, albums, or groups
+- Storage upgrades of older items were sometimes skipped when swiping through photos
+
+Added:
+- Crash logging, visible under Settings, Tests and Logs

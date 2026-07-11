@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
@@ -71,6 +72,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -187,6 +189,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
+            val appLanguageNow by AppSettings.appLanguage
+            val activityContext = LocalContext.current
+            val localizedContext = remember(appLanguageNow, activityContext) {
+                LocaleHelper.wrapForLanguage(activityContext, appLanguageNow)
+            }
+
+            CompositionLocalProvider(
+                LocalContext provides localizedContext,
+                LocalConfiguration provides localizedContext.resources.configuration
+            ) {
+
             val themeVariantNow by AppSettings.themeVariant
             val lightAccentNow by AppSettings.lightAccent
             val darkAccentNow by AppSettings.darkAccent
@@ -246,7 +259,7 @@ class MainActivity : ComponentActivity() {
                     }
                     when {
                         !wizardDone -> WizardHost(
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
                             cryptoMode = cryptoMode,
                             onCryptoModeChange = { AppSettings.setCryptoMode(it) },
                             lockMethod = lockMethod,
@@ -261,7 +274,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                         !sessionUnlocked -> UnlockScreen(
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
                             lockMethod = lockMethod,
                             failureCount = failureCount,
                             lastFailureAt = lastFailureAt,
@@ -391,7 +404,7 @@ class MainActivity : ComponentActivity() {
                                     },
                                     columns = AppSettings.albumColumns.value,
                                     tileShape = AppSettings.albumTileShape.value,
-                                    modifier = Modifier.padding(innerPadding)
+                                    modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
                                 )
 
                                 val viewingUuid = trashViewingUuid
@@ -453,7 +466,7 @@ class MainActivity : ComponentActivity() {
                                 }.getOrNull().orEmpty()
                             }
                             SettingsScreen(
-                                modifier = Modifier.padding(innerPadding),
+                                modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
                                 autoLockTimeoutMinutes = autoLockMinutes,
                                 onAutoLockTimeoutChange = { AppSettings.setLockTimeoutMinutes(it) },
                                 screenshotsAllowed = allowScreenshots,
@@ -482,8 +495,6 @@ class MainActivity : ComponentActivity() {
                                 onAppLanguageChange = { lang ->
                                     if (lang != AppSettings.appLanguage.value) {
                                         AppSettings.setAppLanguage(lang)
-
-                                        this@MainActivity.recreate()
                                     }
                                 },
                                 trashEnabled = trashEnabledNow,
@@ -504,13 +515,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         else -> SkeletonContent(
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding),
                             onOpenSettings = { settingsOpen = true },
                             onOpenTrash = { trashOpen = true }
                         )
                     }
                 }
                 }
+            }
             }
         }
     }

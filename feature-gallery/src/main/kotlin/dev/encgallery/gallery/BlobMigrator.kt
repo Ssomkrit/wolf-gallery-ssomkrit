@@ -4,6 +4,7 @@ import android.content.Context
 import dev.encgallery.crypto.KeystoreAesGcm
 import dev.encgallery.logging.EncLog
 import dev.encgallery.storage.EncryptedFileBlob
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -37,9 +38,11 @@ object BlobMigrator {
                     EncLog.w(TAG, "on-open migrate did not complete for $uuid (kept v1)")
                 }
             }
+        } catch (c: CancellationException) {
+            throw c
         } catch (t: Throwable) {
             failed.add(uuid)
-            EncLog.w(TAG, "on-open migrate threw for $uuid: ${t.javaClass.simpleName}")
+            EncLog.w(TAG, "on-open migrate threw for $uuid: ${t.javaClass.simpleName}: ${t.message}")
         } finally {
             inFlight.remove(uuid)
         }

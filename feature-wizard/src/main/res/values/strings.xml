@@ -36,7 +36,7 @@
     <string name="wizard_crypto_aes_subtitle">Industry standard with hardware acceleration on this device. Protects against all classical attacks — and is already quantum-resistant.</string>
     <string name="wizard_crypto_aes_badge">QUANTUM-SAFE</string>
 
-    <string name="wizard_crypto_quantum_note">Your stack is already quantum-resistant. Data is AES-256-GCM, the password runs through Argon2id, and the key lives in the hardware StrongBox — all symmetric cryptography. Grover’s quantum algorithm only halves its strength, leaving AES-256 at ~128-bit, beyond any brute force. There is no quantum-vulnerable asymmetric cryptography (the kind Shor’s algorithm breaks) in the vault, so “harvest now, decrypt later” does not apply to a local vault.</string>
+    <string name="wizard_crypto_quantum_note">Your stack is already quantum-resistant. Data is AES-256-GCM, the password runs through Argon2id, and the key is held in your device’s secure hardware — all symmetric cryptography. Grover’s quantum algorithm only halves its strength, leaving AES-256 at ~128-bit, beyond any brute force. There is no quantum-vulnerable asymmetric cryptography (the kind Shor’s algorithm breaks) in the vault, so “harvest now, decrypt later” does not apply to a local vault.</string>
 
     <string name="wizard_lock_title">Lock method</string>
     <string name="wizard_lock_intro">How will you unlock the gallery?</string>
@@ -49,7 +49,7 @@
     <string name="wizard_lock_pin_subtitle">6–12 digits. Faster to type one-handed. Smaller alphabet, compensated by stricter Argon2id at unlock time.</string>
     <string name="wizard_lock_pin_badge">6-12 DIGITS</string>
 
-    <string name="wizard_lock_argon_note">Either choice is fine. PIN uses 128 MiB / 5 iterations of Argon2id, password mode uses 64 MiB / 3 iterations — so the KDF makes brute-force comparable across the two. What differs is your typing speed.</string>
+    <string name="wizard_lock_argon_note">Both choices are safe. PIN uses 128 MiB / 5 iterations of Argon2id, password mode uses 64 MiB / 3 iterations. The settings differ on purpose: the heavier they are, the more memory and time each secret check costs. A PIN has few possibilities (digits only), so its KDF is deliberately made heavier — so every brute-force attempt costs more. A password already has vastly more possibilities, so a lighter KDF is enough: unlocking stays fast, doesn’t strain memory, and doesn’t drag out decryption.\n\nThis evens out the cost of brute force — but only up to a point. A KDF only adds a constant multiplier to the price of one attempt; it doesn’t replace the richness of the secret itself. The number of PIN combinations is capped (6–12 digits), while a password can grow without limit, and every extra character multiplies the search space. So a PIN is about convenience (further shielded by the delay between attempts and the wipe), while a long password is the only way to raise strength above the ceiling a PIN can reach.</string>
 
     <string name="wizard_set_title">Set your unlock</string>
     <string name="wizard_set_intro_password">Pick a password — at least 8 characters. Letters of any language, digits, symbols, mixed case — all fine.</string>

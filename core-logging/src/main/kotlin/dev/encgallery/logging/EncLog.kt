@@ -2,6 +2,8 @@ package dev.encgallery.logging
 
 import java.io.File
 import java.io.FileWriter
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -34,6 +36,30 @@ object EncLog {
     fun w(tag: String, msg: String, t: Throwable? = null) = write("W", tag, msg, t)
     fun i(tag: String, msg: String) = write("I", tag, msg, null)
     fun d(tag: String, msg: String) = write("D", tag, msg, null)
+
+    fun crash(thread: Thread, t: Throwable) {
+        val dir = logsDir ?: return
+        synchronized(writeLock) {
+            try {
+                val current = File(dir, LOG_FILENAME)
+                if (current.exists() && current.length() > MAX_FILE_SIZE) {
+                    rotate(dir)
+                }
+                FileWriter(current, true).use { w ->
+                    val df = dateFormat.get()!!
+                    w.append(df.format(Date()))
+                    w.append(" E [CRASH] uncaught on thread '")
+                        .append(thread.name).append("'\n")
+                    val sw = StringWriter()
+                    t.printStackTrace(PrintWriter(sw))
+                    w.append(sw.toString())
+                    w.append('\n')
+                }
+            } catch (e: Throwable) {
+
+            }
+        }
+    }
 
     private fun write(level: String, tag: String, msg: String, t: Throwable?) {
         if (!enabled) return
