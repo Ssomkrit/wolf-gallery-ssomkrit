@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/banner.jpg" alt="Wolf Gallery" width="100%">
+
 # 🐺 Wolf Gallery
 
 **Security · Convenience · Comfort · Personalization — in one gallery.**
