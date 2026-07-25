@@ -134,7 +134,7 @@ Open this directory in **Android Studio** (Panda 4 / 2025.3.4 or newer). Gradle 
 
 ## Support development
 
-Wolf Gallery is free, open-source, and has no ads, accounts, or trackers. If it's useful to you, a donation helps it keep evolving. Privacy-first coins only — no KYC, nothing custodial. The same addresses live inside the app under *Settings → Support development*, with offline QR codes.
+Wolf Gallery is free and open-source, with no ads, no accounts and no trackers. If you find it useful, a donation helps the app grow and improve faster. Donations are accepted in privacy-focused cryptocurrencies only — no KYC, no data collected or stored, fully non-custodial and anonymous.
 
 ![Monero](https://img.shields.io/badge/Monero-XMR-FF6600?style=for-the-badge&logo=monero&logoColor=white)
 
@@ -147,6 +147,8 @@ Wolf Gallery is free, open-source, and has no ads, accounts, or trackers. If it'
 ```
 u1hwe88n4r8zz8958ssr02swq3svxmpqxq5uzhn3sp3zkjna39ymphtkc4egc2w0s4pxvhemmw2cw89gz7qzkzxvhnhrywwhm0aaq706h0a8p7jc447m59nululu77y42x2u6n056jwyvclphau2tu9jayt4c4szzkrjh5vxtrd587rx65
 ```
+
+The same addresses are in the app under *Settings → Support development*, with offline QR codes.
 
 ## Contact
 

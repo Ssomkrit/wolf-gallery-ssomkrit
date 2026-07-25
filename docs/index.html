@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support Wolf Gallery</title>
+<meta name="description" content="Donate to Wolf Gallery in privacy-focused cryptocurrencies. No KYC, non-custodial, anonymous.">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="wolf.png" type="image/png">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --panel: #141417;
+    --line: #26262c;
+    --text: #ececf1;
+    --muted: #9a9aa5;
+    --accent: #e0a83c;
+    --safe: #4ade80;
+    --safe-bg: rgba(74, 222, 128, .08);
+    --safe-line: rgba(74, 222, 128, .35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f6f7;
+      --panel: #ffffff;
+      --line: #e0e0e5;
+      --text: #16161a;
+      --muted: #5f5f6b;
+      --accent: #9a6f14;
+      --safe: #15803d;
+      --safe-bg: rgba(21, 128, 61, .07);
+      --safe-line: rgba(21, 128, 61, .3);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 3rem 1.25rem 4rem;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 2.5rem; }
+  .mark { width: 96px; height: 96px; display: block; margin: 0 auto 1.1rem; }
+  h1 {
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
+    margin: 0 0 .6rem;
+    letter-spacing: -.02em;
+  }
+  .tagline { color: var(--muted); margin: 0; font-size: .98rem; }
+
+  .intro {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.35rem 1.45rem;
+    margin: 0 0 1.1rem;
+  }
+  .intro p { margin: 0; }
+  .intro p + p { margin-top: .9rem; }
+
+  .safe {
+    display: flex;
+    gap: .7rem;
+    align-items: flex-start;
+    background: var(--safe-bg);
+    border: 1px solid var(--safe-line);
+    border-radius: 14px;
+    padding: .95rem 1.15rem;
+    margin: 0 0 2.5rem;
+    color: var(--safe);
+    font-size: .92rem;
+    line-height: 1.55;
+  }
+  .safe .tick { font-weight: 700; flex: 0 0 auto; }
+  .safe p { margin: 0; }
+
+  .coin {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.4rem;
+    margin-bottom: 1.5rem;
+  }
+  .coin h2 {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: 1.15rem;
+    margin: 0 0 1.15rem;
+  }
+  .coin h2 img { width: 30px; height: 30px; display: block; }
+  .ticker {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    color: var(--muted);
+  }
+
+  .row { display: flex; gap: 1.4rem; align-items: flex-start; flex-wrap: wrap; }
+  .qr {
+    flex: 0 0 auto;
+    width: 168px;
+    height: 168px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px;
+  }
+  .qr img { display: block; width: 100%; height: 100%; }
+  .addr-wrap { flex: 1 1 16rem; min-width: 0; }
+  .label {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+    margin: 0 0 .45rem;
+  }
+  code.addr {
+    display: block;
+    user-select: all;
+    -webkit-user-select: all;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .82rem;
+    line-height: 1.5;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: .7rem .8rem;
+    cursor: pointer;
+  }
+  code.addr:hover { border-color: var(--accent); }
+  .hint { color: var(--muted); font-size: .82rem; margin: .55rem 0 0; }
+
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .88rem;
+    text-align: center;
+  }
+  footer p { margin: 0; }
+  a { color: var(--accent); }
+  a:hover { text-decoration: none; }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <img class="mark" src="wolf.png" width="96" height="96" alt="Wolf Gallery">
+    <h1>Support Wolf Gallery</h1>
+    <p class="tagline">Encrypted, fully offline photo &amp; video vault for Android.</p>
+  </header>
+
+  <section class="intro">
+    <p>Wolf Gallery carries no ads, no trackers, and does not sell personal data.</p>
+    <p>The app is developed entirely on voluntary donations. Every contribution goes directly into development — no hidden terms, no intermediaries, no mandatory forms.</p>
+    <p>Only privacy-focused cryptocurrencies are accepted: no registration, no KYC, no collection of any information. Funds arrive in the developer's non-custodial wallet, and no data about the sender is requested, collected or stored.</p>
+  </section>
+
+  <p class="safe"><span class="tick" aria-hidden="true">&check;</span><span>Nothing here tracks you: this page loads no scripts, no fonts and no third-party resources, and works with JavaScript disabled.</span></p>
+
+  <section class="coin">
+    <h2><img src="coin-monero.png" width="30" height="30" alt="">Monero <span class="ticker">XMR</span></h2>
+    <div class="row">
+      <div class="qr"><img src="qr-monero.svg" width="152" height="152" alt="QR code for the Monero donation address"></div>
+      <div class="addr-wrap">
+        <p class="label">Address</p>
+        <code class="addr">42nfQ6zMT9jbLM2XGwNLLX137s8RkYRrhhJSqrFFZvCwcWegttcMQJZ85gTG6niredYWfRP6FYoEtPKYDDWQ63CM8hT5xzK</code>
+        <p class="hint">Click on the address to select it in full.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="coin">
+    <h2><img src="coin-zcash.png" width="30" height="30" alt="">Zcash <span class="ticker">ZEC</span></h2>
+    <div class="row">
+      <div class="qr"><img src="qr-zcash.svg" width="152" height="152" alt="QR code for the Zcash shielded donation address"></div>
+      <div class="addr-wrap">
+        <p class="label">Shielded address</p>
+        <code class="addr">u1hwe88n4r8zz8958ssr02swq3svxmpqxq5uzhn3sp3zkjna39ymphtkc4egc2w0s4pxvhemmw2cw89gz7qzkzxvhnhrywwhm0aaq706h0a8p7jc447m59nululu77y42x2u6n056jwyvclphau2tu9jayt4c4szzkrjh5vxtrd587rx65</code>
+        <p class="hint">Click on the address to select it in full. Shielded funds only.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><a href="https://github.com/Wolf-Project777/wolf-gallery">Source code on GitHub</a> · GPL-3.0-only</p>
+  </footer>
+
+</main>
+</body>
+</html>
