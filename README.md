@@ -134,7 +134,9 @@ Open this directory in **Android Studio** (Panda 4 / 2025.3.4 or newer). Gradle 
 
 ## Support development
 
-Wolf Gallery is free and open-source, with no ads, no accounts and no trackers. If you find it useful, a donation helps the app grow and improve faster. Donations are accepted in privacy-focused cryptocurrencies only — no KYC, no data collected or stored, fully non-custodial and anonymous.
+There is no company behind Wolf Gallery and nothing in it to sell you. Development runs on donations alone, and whatever arrives goes into the next release.
+
+Monero and Zcash are the only options: both let you send without identifying yourself, and neither address is held by anyone but the developer.
 
 ![Monero](https://img.shields.io/badge/Monero-XMR-FF6600?style=for-the-badge&logo=monero&logoColor=white)
 
