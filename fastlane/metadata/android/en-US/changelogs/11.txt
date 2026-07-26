@@ -1,0 +1,5 @@
+Added three Material 3 themes: light, dark and black for AMOLED screens. Each can be paired with an accent colour of your choice, and the whole interface follows it.
+
+Added sharing into Wolf Gallery. Photos and videos can now be sent from other apps straight into the vault. They are accepted only while the vault is unlocked, and nothing is imported if it is locked or the app is fully closed.
+
+Fixed a visual glitch in the navigation bar.
