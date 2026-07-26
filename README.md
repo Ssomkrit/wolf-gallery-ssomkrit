@@ -150,8 +150,6 @@ Monero and Zcash are the only options: both let you send without identifying you
 u1hwe88n4r8zz8958ssr02swq3svxmpqxq5uzhn3sp3zkjna39ymphtkc4egc2w0s4pxvhemmw2cw89gz7qzkzxvhnhrywwhm0aaq706h0a8p7jc447m59nululu77y42x2u6n056jwyvclphau2tu9jayt4c4szzkrjh5vxtrd587rx65
 ```
 
-The same addresses are in the app under *Settings → Support development*, with offline QR codes.
-
 ## Contact
 
 Feedback and questions: **wolf-project777@protonmail.com**
