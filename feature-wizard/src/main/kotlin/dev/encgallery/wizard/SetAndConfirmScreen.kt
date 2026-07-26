@@ -18,14 +18,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import dev.encgallery.featuresettings.ThemedFilterChip
+import dev.encgallery.featuresettings.ThemedSwitch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -300,7 +300,7 @@ private fun WipeSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(
+        ThemedSwitch(
             checked = wipeEnabled,
             enabled = enabled,
             onCheckedChange = onWipeEnabledChange
@@ -344,7 +344,7 @@ private fun WipeSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             for (preset in presets) {
-                FilterChip(
+                ThemedFilterChip(
                     selected = !isCustom && wipeAfterN == preset,
                     onClick = { onWipeAfterNChange(preset) },
                     label = {
@@ -353,7 +353,7 @@ private fun WipeSection(
                     enabled = enabled
                 )
             }
-            FilterChip(
+            ThemedFilterChip(
                 selected = isCustom,
                 onClick = { customDialogShown = true },
                 label = {

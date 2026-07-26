@@ -46,6 +46,9 @@
     <string name="settings_appearance_variant_hacker">Hacker</string>
     <string name="settings_appearance_variant_bloody">Bloody</string>
     <string name="settings_appearance_variant_medieval">Medieval</string>
+    <string name="settings_appearance_variant_m3_light">Material 3 светлая</string>
+    <string name="settings_appearance_variant_m3_dark">Material 3 тёмная</string>
+    <string name="settings_appearance_variant_m3_black">Material 3 чёрная (AMOLED)</string>
     <string name="settings_appearance_accent_header">Основной цвет</string>
     <string name="settings_appearance_accent_preview_album_name">Альбом</string>
     <string name="settings_appearance_accent_preview_album_count">12 фото</string>

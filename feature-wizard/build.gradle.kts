@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":core-crypto"))
     implementation(project(":core-native"))
     implementation(project(":core-logging"))
+    implementation(project(":feature-settings"))
 
     implementation(libs.androidx.activity.compose)
 

@@ -46,6 +46,9 @@
     <string name="settings_appearance_variant_hacker">Hacker</string>
     <string name="settings_appearance_variant_bloody">Bloody</string>
     <string name="settings_appearance_variant_medieval">Medieval</string>
+    <string name="settings_appearance_variant_m3_light">Material 3 light</string>
+    <string name="settings_appearance_variant_m3_dark">Material 3 dark</string>
+    <string name="settings_appearance_variant_m3_black">Material 3 black (AMOLED)</string>
     <string name="settings_appearance_accent_header">Primary color</string>
     <string name="settings_appearance_accent_preview_album_name">Album</string>
     <string name="settings_appearance_accent_preview_album_count">12 photos</string>

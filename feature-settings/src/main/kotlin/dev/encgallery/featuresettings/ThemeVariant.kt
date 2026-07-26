@@ -50,7 +50,34 @@ enum class ThemeVariant(
         previewSurface = Color(0xFF15110B),
         previewOnSurface = Color(0xFFE8C98A),
         previewAccent = Color(0xFFB48238)
+    ),
+    M3_LIGHT(
+        nameRes = R.string.settings_appearance_variant_m3_light,
+        isDark = false,
+        supportsAccent = true,
+        previewSurface = Color(0xFFFEF7FF),
+        previewOnSurface = Color(0xFF1D1B20),
+        previewAccent = Color(0xFF1565C0)
+    ),
+    M3_DARK(
+        nameRes = R.string.settings_appearance_variant_m3_dark,
+        isDark = true,
+        supportsAccent = true,
+        previewSurface = Color(0xFF141218),
+        previewOnSurface = Color(0xFFE6E0E9),
+        previewAccent = Color(0xFF80B4FF)
+    ),
+    M3_BLACK(
+        nameRes = R.string.settings_appearance_variant_m3_black,
+        isDark = true,
+        supportsAccent = true,
+        previewSurface = Color(0xFF000000),
+        previewOnSurface = Color(0xFFE6E0E9),
+        previewAccent = Color(0xFF80B4FF)
     );
+
+    val isMaterial3: Boolean
+        get() = this == M3_LIGHT || this == M3_DARK || this == M3_BLACK
 
     companion object {
         val DEFAULT: ThemeVariant = LIGHT

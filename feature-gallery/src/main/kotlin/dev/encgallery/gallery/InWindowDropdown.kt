@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.math.roundToInt
+import dev.encgallery.featuresettings.LocalThemeVariant
 
 @Composable
 fun InWindowDropdown(
@@ -132,7 +133,7 @@ private fun InWindowDropdownBody(
                     },
                 shape = frameShape,
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = 3.dp,
+                tonalElevation = if (LocalThemeVariant.current.isMaterial3) 0.dp else 3.dp,
                 shadowElevation = 6.dp
             ) {
 

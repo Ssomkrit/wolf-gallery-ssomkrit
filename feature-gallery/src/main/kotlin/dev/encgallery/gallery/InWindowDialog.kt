@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import dev.encgallery.featuresettings.LocalThemeVariant
 
 @Composable
 fun InWindowDialog(
@@ -111,8 +112,12 @@ private fun InWindowDialogBody(
                     detectTapGestures { }
                 },
             shape = frameShape,
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
+            color = if (LocalThemeVariant.current.isMaterial3) {
+                MaterialTheme.colorScheme.surfaceContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+            tonalElevation = if (LocalThemeVariant.current.isMaterial3) 0.dp else 6.dp,
             shadowElevation = 6.dp
         ) {
             Column(

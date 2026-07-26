@@ -33,11 +33,14 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +50,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -66,6 +70,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -576,7 +581,7 @@ private fun LanguageRow(label: String, selected: Boolean, onSelect: () -> Unit) 
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f)
         )
-        RadioButton(selected = selected, onClick = onSelect)
+        ThemedRadioButton(selected = selected, onClick = onSelect)
     }
 }
 
@@ -634,7 +639,7 @@ private fun AlbumGridBlock(
     Spacer(Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (count in albumColumnChoices) {
-            FilterChip(
+            ThemedFilterChip(
                 selected = albumColumns == count,
                 onClick = { onAlbumColumnsChange(count) },
                 label = { Text(count.toString()) }
@@ -662,7 +667,7 @@ private fun AlbumGridBlock(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         for (shape in AlbumTileShape.entries) {
-            FilterChip(
+            ThemedFilterChip(
                 selected = albumTileShape == shape,
                 onClick = { onAlbumTileShapeChange(shape) },
                 leadingIcon = { TileShapeSwatch(shape) },
@@ -692,7 +697,7 @@ private fun PhotoGridBlock(
     Spacer(Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (layout in PhotoGridLayout.entries) {
-            FilterChip(
+            ThemedFilterChip(
                 selected = photoGridLayout == layout,
                 onClick = { onPhotoGridLayoutChange(layout) },
                 label = { Text(stringResource(layout.labelRes)) }
@@ -750,6 +755,17 @@ private fun ThemeVariantRow(
         val nameColor = when (variant) {
             ThemeVariant.LIGHT -> Color(0xFF9E9E9E)
             ThemeVariant.DARK_DEFAULT -> Color(0xFF5C5C5C)
+            ThemeVariant.M3_LIGHT, ThemeVariant.M3_DARK, ThemeVariant.M3_BLACK -> {
+                val onDarkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+                when (variant) {
+                    ThemeVariant.M3_LIGHT ->
+                        if (onDarkSurface) Color(0xFFE8DEF8) else Color(0xFF7359B5)
+                    ThemeVariant.M3_DARK ->
+                        if (onDarkSurface) Color(0xFFD0BCFF) else Color(0xFF6750A4)
+                    else ->
+                        if (onDarkSurface) Color(0xFFB69DF8) else Color(0xFF4F378B)
+                }
+            }
             else -> variant.previewAccent
         }
         Text(
@@ -760,7 +776,7 @@ private fun ThemeVariantRow(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
         )
-        RadioButton(selected = selected, onClick = onSelect)
+        ThemedRadioButton(selected = selected, onClick = onSelect)
     }
 }
 
@@ -1232,7 +1248,7 @@ private fun SwitchRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        ThemedSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -1259,7 +1275,7 @@ private fun RadioOptionRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        RadioButton(selected = selected, onClick = onSelect)
+        ThemedRadioButton(selected = selected, onClick = onSelect)
     }
 }
 
@@ -1292,7 +1308,7 @@ private fun AutoLockBlock(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         for (preset in presets) {
-            FilterChip(
+            ThemedFilterChip(
                 selected = !isCustom && timeoutMinutes == preset,
                 onClick = { onTimeoutChange(preset) },
                 label = {
@@ -1305,7 +1321,7 @@ private fun AutoLockBlock(
                 }
             )
         }
-        FilterChip(
+        ThemedFilterChip(
             selected = isCustom,
             onClick = { customDialogShown = true },
             label = {

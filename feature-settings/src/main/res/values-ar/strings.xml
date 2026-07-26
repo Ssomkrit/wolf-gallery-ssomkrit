@@ -46,6 +46,9 @@
     <string name="settings_appearance_variant_hacker">Hacker</string>
     <string name="settings_appearance_variant_bloody">Bloody</string>
     <string name="settings_appearance_variant_medieval">Medieval</string>
+    <string name="settings_appearance_variant_m3_light">Material 3 فاتحة</string>
+    <string name="settings_appearance_variant_m3_dark">Material 3 داكنة</string>
+    <string name="settings_appearance_variant_m3_black">Material 3 سوداء (AMOLED)</string>
     <string name="settings_appearance_accent_header">اللون الأساسي</string>
     <string name="settings_appearance_accent_preview_album_name">ألبوم</string>
     <string name="settings_appearance_accent_preview_album_count">12 صورة</string>

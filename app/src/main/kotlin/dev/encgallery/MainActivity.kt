@@ -69,16 +69,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.drawBehind
 import dev.encgallery.crypto.DekVault
 import dev.encgallery.crypto.KekWrap
 import dev.encgallery.crypto.KeystoreAesGcm
@@ -158,6 +161,8 @@ import dev.encgallery.settings.LocaleHelper
 import dev.encgallery.storage.EncryptedFileBlob
 import dev.encgallery.ui.theme.EncGalleryTheme
 import dev.encgallery.featuresettings.LocalThemeVariant
+import dev.encgallery.featuresettings.ThemedRadioButton
+import dev.encgallery.ui.PillTabs
 import dev.encgallery.featuresettings.MedievalIcons
 import dev.encgallery.featuresettings.ThemedIcon
 import dev.encgallery.featuresettings.ThemeVariant
@@ -169,6 +174,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import dev.encgallery.ui.theme.LocalTabRowColor
+import androidx.compose.ui.graphics.isSpecified
 
 private var autoPurgeRanThisProcess: Boolean = false
 
@@ -1792,7 +1799,7 @@ private fun SkeletonContent(
             } else Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
@@ -1879,44 +1886,62 @@ private fun SkeletonContent(
                 }
             }
 
+            val tabRowBackground = LocalTabRowColor.current.takeIf { it.isSpecified }
+                ?: MaterialTheme.colorScheme.surface
+
             val tabRow: @Composable () -> Unit = {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(tabRowBackground),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    PrimaryTabRow(
-                        selectedTabIndex = selectedTab.ordinal,
-                        containerColor = MaterialTheme.colorScheme.surface,
+                    val selectAllTab = {
+                        if (selectedTab != GalleryTab.ALL) {
+                            GallerySession.albumsTabReturnAlbumUuid = openedAlbumUuid
+                            openedAlbumUuid = null
+                        }
+                        selectedTab = GalleryTab.ALL
+                    }
+                    val selectAlbumsTab = {
+                        if (selectedTab != GalleryTab.ALBUMS) {
+                            openedAlbumUuid =
+                                GallerySession.albumsTabReturnAlbumUuid
+                        }
+                        selectedTab = GalleryTab.ALBUMS
+                    }
 
-                        divider = {},
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Tab(
-                            selected = selectedTab == GalleryTab.ALL,
-                            onClick = {
-
-                                if (selectedTab != GalleryTab.ALL) {
-                                    GallerySession.albumsTabReturnAlbumUuid = openedAlbumUuid
-                                    openedAlbumUuid = null
-                                }
-                                selectedTab = GalleryTab.ALL
+                    if (LocalThemeVariant.current.isMaterial3) {
+                        PillTabs(
+                            titles = listOf(
+                                stringResource(R.string.tab_all),
+                                stringResource(R.string.tab_albums)
+                            ),
+                            selectedIndex = selectedTab.ordinal,
+                            onSelect = { index ->
+                                if (index == GalleryTab.ALL.ordinal) selectAllTab() else selectAlbumsTab()
                             },
-                            text = { Text(stringResource(R.string.tab_all)) }
+                            modifier = Modifier.weight(1f)
                         )
-                        Tab(
-                            selected = selectedTab == GalleryTab.ALBUMS,
-                            onClick = {
+                    } else {
+                        PrimaryTabRow(
+                            selectedTabIndex = selectedTab.ordinal,
+                            containerColor = MaterialTheme.colorScheme.surface,
 
-                                if (selectedTab != GalleryTab.ALBUMS) {
-                                    openedAlbumUuid =
-                                        GallerySession.albumsTabReturnAlbumUuid
-                                }
-                                selectedTab = GalleryTab.ALBUMS
-                            },
-                            text = { Text(stringResource(R.string.tab_albums)) }
-                        )
+                            divider = {},
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Tab(
+                                selected = selectedTab == GalleryTab.ALL,
+                                onClick = selectAllTab,
+                                text = { Text(stringResource(R.string.tab_all)) }
+                            )
+                            Tab(
+                                selected = selectedTab == GalleryTab.ALBUMS,
+                                onClick = selectAlbumsTab,
+                                text = { Text(stringResource(R.string.tab_albums)) }
+                            )
+                        }
                     }
                     IconButton(
                         onClick = { burgerExpanded = true },
@@ -3581,7 +3606,7 @@ private fun SortOptionRow(label: String, selected: Boolean, onClick: () -> Unit)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(selected = selected, onClick = onClick)
+        ThemedRadioButton(selected = selected, onClick = onClick)
         Spacer(Modifier.width(4.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge)
     }

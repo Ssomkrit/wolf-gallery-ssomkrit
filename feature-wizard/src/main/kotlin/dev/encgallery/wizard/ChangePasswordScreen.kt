@@ -16,11 +16,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import dev.encgallery.featuresettings.ThemedFilterChip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -120,7 +120,7 @@ fun ChangePasswordScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
+            ThemedFilterChip(
                 selected = newMethod == LockMethod.PASSWORD,
                 enabled = !working,
                 onClick = {
@@ -132,7 +132,7 @@ fun ChangePasswordScreen(
                 },
                 label = { Text(stringResource(R.string.wizard_lock_password_title)) }
             )
-            FilterChip(
+            ThemedFilterChip(
                 selected = newMethod == LockMethod.PIN,
                 enabled = !working,
                 onClick = {
