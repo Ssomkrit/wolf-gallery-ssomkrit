@@ -168,4 +168,11 @@
     <string name="blob_running">Cifrando y descifrando 2 MiB…</string>
     <string name="toast_blob_pass">Ciclo de blob SUPERADO — las 6 propiedades verificadas</string>
     <string name="toast_blob_fail">Ciclo de blob FALLIDO — ver registro</string>
+    <string name="share_target_title">Wolf Gallery</string>
+    <string name="share_target_locked">La caja fuerte está bloqueada. Abre Wolf Gallery, desbloquéala y comparte de nuevo. No se importó nada.</string>
+    <string name="share_target_empty">No hay nada que importar.</string>
+    <string name="share_target_importing">Añadiendo a la caja fuerte…</string>
+    <string name="share_target_done">Añadido a la caja fuerte: %1$d</string>
+    <string name="share_target_partial">Añadidos: %1$d. Fallidos: %2$d.</string>
+    <string name="share_target_close">Cerrar</string>
 </resources>

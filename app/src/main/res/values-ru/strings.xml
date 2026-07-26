@@ -169,4 +169,11 @@
     <string name="import_folder_progress_title">Импорт в «%1$s»</string>
     <string name="import_folder_done">Импортировано %1$d из %2$d</string>
     <string name="import_perm_denied">Для импорта нужен доступ к фото и видео на устройстве</string>
+    <string name="share_target_title">Wolf Gallery</string>
+    <string name="share_target_locked">Сейф заперт. Откройте Wolf Gallery, разблокируйте и поделитесь снова. Ничего не импортировано.</string>
+    <string name="share_target_empty">Нечего импортировать.</string>
+    <string name="share_target_importing">Добавляем в сейф…</string>
+    <string name="share_target_done">Добавлено в сейф: %1$d</string>
+    <string name="share_target_partial">Добавлено: %1$d. Не удалось: %2$d.</string>
+    <string name="share_target_close">Закрыть</string>
 </resources>

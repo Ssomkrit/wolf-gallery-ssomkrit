@@ -168,4 +168,11 @@
     <string name="blob_running">جارٍ التشفير وفكّ التشفير لـ 2 ميبي…</string>
     <string name="toast_blob_pass">نجحت دورة الكتلة — تم التحقق من الخصائص الست</string>
     <string name="toast_blob_fail">فشلت دورة الكتلة — راجع السجل</string>
+    <string name="share_target_title">Wolf Gallery</string>
+    <string name="share_target_locked">الخزنة مقفلة. افتح Wolf Gallery وألغِ القفل ثم شارك مرة أخرى. لم يتم استيراد أي شيء.</string>
+    <string name="share_target_empty">لا يوجد ما يمكن استيراده.</string>
+    <string name="share_target_importing">…جارٍ الإضافة إلى الخزنة</string>
+    <string name="share_target_done">تمت الإضافة إلى الخزنة: %1$d</string>
+    <string name="share_target_partial">تمت الإضافة: %1$d. فشل: %2$d.</string>
+    <string name="share_target_close">إغلاق</string>
 </resources>
