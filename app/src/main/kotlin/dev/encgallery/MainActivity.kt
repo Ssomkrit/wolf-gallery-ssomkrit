@@ -890,6 +890,7 @@ private fun SkeletonContent(
     val copyTitleTemplate = stringResource(R.string.op_progress_title_copy)
     val trashTitleTemplate = stringResource(R.string.op_progress_title_trash)
     val importTitleTemplate = stringResource(R.string.import_folder_progress_title)
+    val exportTitle = stringResource(R.string.export_progress_title)
 
     val clearGridSelection = {
         GallerySession.lastSelectedEntryUuids = emptySet()
@@ -1444,9 +1445,20 @@ private fun SkeletonContent(
         pendingExportEntry = null
         if (uri != null && entry != null) {
             scope.launch {
-                val ok = EntryExport.exportToUri(
-                    context, entry, uri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                operationProgress = OperationProgress(
+                    OperationKind.EXPORT, "", 0, 1, exportTitle
                 )
+                val ok = try {
+                    EntryExport.exportToUri(
+                        context, entry, uri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                    ) { done, tot ->
+                        operationProgress = OperationProgress(
+                            OperationKind.EXPORT, "", done, tot, exportTitle
+                        )
+                    }
+                } finally {
+                    operationProgress = null
+                }
                 Toast.makeText(
                     context,
                     if (ok) R.string.export_done_single else R.string.export_failed,
@@ -1463,9 +1475,20 @@ private fun SkeletonContent(
         pendingExportEntries = emptyList()
         if (treeUri != null && items.isNotEmpty()) {
             scope.launch {
-                val (ok, total) = EntryExport.exportToTree(
-                    context, items, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                operationProgress = OperationProgress(
+                    OperationKind.EXPORT, "", 0, items.size, exportTitle
                 )
+                val (ok, total) = try {
+                    EntryExport.exportToTree(
+                        context, items, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                    ) { done, tot ->
+                        operationProgress = OperationProgress(
+                            OperationKind.EXPORT, "", done, tot, exportTitle
+                        )
+                    }
+                } finally {
+                    operationProgress = null
+                }
                 val msg = if (ok == 0) {
                     context.getString(R.string.export_failed)
                 } else {
@@ -1483,9 +1506,21 @@ private fun SkeletonContent(
         pendingExportAlbums = emptyList()
         if (treeUri != null && bundles.isNotEmpty()) {
             scope.launch {
-                val (ok, total) = EntryExport.exportAlbumsToTree(
-                    context, bundles, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                val grandTotal = bundles.sumOf { it.entries.size }
+                operationProgress = OperationProgress(
+                    OperationKind.EXPORT, "", 0, grandTotal, exportTitle
                 )
+                val (ok, total) = try {
+                    EntryExport.exportAlbumsToTree(
+                        context, bundles, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                    ) { done, tot ->
+                        operationProgress = OperationProgress(
+                            OperationKind.EXPORT, "", done, tot, exportTitle
+                        )
+                    }
+                } finally {
+                    operationProgress = null
+                }
                 val msg = if (ok == 0) {
                     context.getString(R.string.export_failed)
                 } else {

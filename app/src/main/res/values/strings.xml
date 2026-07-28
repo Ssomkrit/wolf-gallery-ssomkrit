@@ -163,6 +163,7 @@
     <string name="export_done_single">Exported to device</string>
     <string name="export_done_multi">Exported %1$d of %2$d</string>
     <string name="export_failed">Could not export to device</string>
+    <string name="export_progress_title">Exporting to device</string>
 
     <string name="import_folder_default_name">Import</string>
     <string name="import_folder_empty">No supported photos or videos in this folder</string>

@@ -163,6 +163,7 @@
     <string name="export_done_single">Экспортировано на устройство</string>
     <string name="export_done_multi">Экспортировано %1$d из %2$d</string>
     <string name="export_failed">Не удалось экспортировать на устройство</string>
+    <string name="export_progress_title">Экспорт на устройство</string>
 
     <string name="import_folder_default_name">Импорт</string>
     <string name="import_folder_empty">В папке нет поддерживаемых фото или видео</string>

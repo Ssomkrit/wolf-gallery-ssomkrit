@@ -31,9 +31,11 @@ object EntryExport {
         context: Context,
         entry: VaultEntry,
         uri: Uri,
-        keystore: KeystoreAesGcm
+        keystore: KeystoreAesGcm,
+        onProgress: ((done: Int, total: Int) -> Unit)? = null
     ): Boolean = withContext(Dispatchers.IO) {
         try {
+            onProgress?.invoke(0, 1)
             val resolver = context.contentResolver
             val opened = resolver.openOutputStream(uri)
             if (opened == null) {
@@ -43,6 +45,7 @@ object EntryExport {
             opened.use { out ->
                 EncryptedFileBlob(keystore).decryptToStream(entry.blobFile, out)
             }
+            onProgress?.invoke(1, 1)
             EncLog.i(TAG, "export ${entry.uuid} ok (${entry.blobSizeBytes} enc bytes)")
             true
         } catch (t: Throwable) {
@@ -60,7 +63,8 @@ object EntryExport {
         context: Context,
         entries: List<VaultEntry>,
         treeUri: Uri,
-        keystore: KeystoreAesGcm
+        keystore: KeystoreAesGcm,
+        onProgress: ((done: Int, total: Int) -> Unit)? = null
     ): Pair<Int, Int> = withContext(Dispatchers.IO) {
         if (entries.isEmpty()) return@withContext 0 to 0
         val resolver = context.contentResolver
@@ -71,10 +75,14 @@ object EntryExport {
         val repo = EntriesRepository(keystore)
         val usedNames = HashSet<String>()
         var ok = 0
+        var processed = 0
+        onProgress?.invoke(0, entries.size)
         entries.forEach { entry ->
             val name = uniqueName(resolveName(repo, entry), usedNames)
             usedNames.add(name)
             if (writeEntryInto(resolver, parentDocUri, name, entry, keystore)) ok++
+            processed++
+            onProgress?.invoke(processed, entries.size)
         }
         EncLog.i(TAG, "exportToTree: $ok/${entries.size} files written")
         ok to entries.size
@@ -84,7 +92,8 @@ object EntryExport {
         context: Context,
         albums: List<AlbumExportBundle>,
         treeUri: Uri,
-        keystore: KeystoreAesGcm
+        keystore: KeystoreAesGcm,
+        onProgress: ((done: Int, total: Int) -> Unit)? = null
     ): Pair<Int, Int> = withContext(Dispatchers.IO) {
         val totalFiles = albums.sumOf { it.entries.size }
         if (totalFiles == 0) return@withContext 0 to 0
@@ -96,6 +105,8 @@ object EntryExport {
         val repo = EntriesRepository(keystore)
         val usedFolders = HashSet<String>()
         var ok = 0
+        var processed = 0
+        onProgress?.invoke(0, totalFiles)
         albums.forEach { album ->
             val folderName = uniqueName(
                 sanitize(album.folderName) ?: "WolfGallery", usedFolders
@@ -117,6 +128,8 @@ object EntryExport {
                     TAG,
                     "exportAlbumsToTree: no dir for '$folderName', skipping ${album.entries.size} file(s)"
                 )
+                processed += album.entries.size
+                onProgress?.invoke(processed, totalFiles)
                 return@forEach
             }
             val usedNames = HashSet<String>()
@@ -124,6 +137,8 @@ object EntryExport {
                 val name = uniqueName(resolveName(repo, entry), usedNames)
                 usedNames.add(name)
                 if (writeEntryInto(resolver, dirUri, name, entry, keystore)) ok++
+                processed++
+                onProgress?.invoke(processed, totalFiles)
             }
         }
         EncLog.i(TAG, "exportAlbumsToTree: $ok/$totalFiles file(s) into ${albums.size} folder(s)")

@@ -100,4 +100,4 @@ data class OperationProgress(
     val titleText: String
 )
 
-enum class OperationKind { MOVE, COPY, TRASH, RESTORE, IMPORT }
+enum class OperationKind { MOVE, COPY, TRASH, RESTORE, IMPORT, EXPORT }

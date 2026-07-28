@@ -1,0 +1,3 @@
+Wolf Gallery can now be moved both ways between your device's internal storage and an SD card, from Android's app storage settings. It moves even with your photos and videos already inside — everything comes along, including your albums and settings, and nothing is deleted or reset. The vault stays encrypted the whole time, and nothing is ever written out in the clear.
+
+Exporting to your device now shows the same progress indicator as importing — a bar with a live file count and percentage — whether you export a single file, several files or whole albums.

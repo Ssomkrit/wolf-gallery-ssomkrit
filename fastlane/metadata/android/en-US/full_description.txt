@@ -19,13 +19,3 @@ Choose from several themes, including pure-black dark modes, paired with a custo
 <b>Other</b>
 
 A built-in trash keeps deletions undoable, a first-run wizard makes setup effortless, and the app is available in several languages with more translations on the way.
-
-<b>Support development</b>
-
-Wolf Gallery is completely free — and will always stay that way — open-source, with no ads, no accounts and no tracking. If it helps you and you would like to support it, donations are welcome in privacy- and anonymity-focused cryptocurrencies: no KYC, no central watching exchanges or intermediaries, fully non-custodial. Your donation helps the app grow and improve faster.
-
-Monero:
-42nfQ6zMT9jbLM2XGwNLLX137s8RkYRrhhJSqrFFZvCwcWegttcMQJZ85gTG6niredYWfRP6FYoEtPKYDDWQ63CM8hT5xzK
-
-Zcash (shielded):
-u1hwe88n4r8zz8958ssr02swq3svxmpqxq5uzhn3sp3zkjna39ymphtkc4egc2w0s4pxvhemmw2cw89gz7qzkzxvhnhrywwhm0aaq706h0a8p7jc447m59nululu77y42x2u6n056jwyvclphau2tu9jayt4c4szzkrjh5vxtrd587rx65
