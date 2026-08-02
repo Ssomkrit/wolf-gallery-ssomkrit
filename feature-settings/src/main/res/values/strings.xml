@@ -114,4 +114,19 @@
     <string name="about_email_copied">Email copied</string>
     <string name="about_source_header">Source code</string>
     <string name="about_link_copied">Link copied</string>
+    <string name="settings_cat_transfer_title">Import, export, backups</string>
+    <string name="settings_cat_transfer_subtitle">Where exported files are saved</string>
+    <string name="settings_transfer_export_header">Export destination</string>
+    <string name="settings_export_ask_title">Ask every time</string>
+    <string name="settings_export_ask_desc">A folder picker opens on every export. The folder below stays saved, but is not used.</string>
+    <string name="settings_export_fixed_title">Always use one folder</string>
+    <string name="settings_export_fixed_desc">Exports go straight to the folder below, without asking.</string>
+    <string name="settings_export_folder_label">Export folder</string>
+    <string name="settings_export_browse">Browse</string>
+    <string name="settings_export_folder_note">The app keeps write access to this one folder only, and cannot read what is already in it. The path is remembered until you change it here — removing and reinserting a memory card does not clear it.</string>
+    <string name="settings_transfer_coming_soon">Soon</string>
+    <string name="settings_transfer_import_title">Import</string>
+    <string name="settings_transfer_import_desc">Import settings will live here. Adding files already works from the gallery.</string>
+    <string name="settings_transfer_backup_title">Backups</string>
+    <string name="settings_transfer_backup_desc">A portable encrypted backup that opens on another device with your password.</string>
 </resources>

@@ -7,12 +7,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.encgallery.crypto.KeystoreAesGcm
+import dev.encgallery.logging.EncLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 object ImportController {
+
+    private const val TAG = "ImportController"
 
     private val scope = CoroutineScope(SupervisorJob())
 
@@ -25,6 +28,8 @@ object ImportController {
     var currentDisplayName by mutableStateOf("")
         private set
 
+    class Summary(val successful: Int, val failed: Int, val total: Int)
+
     var hasSummary by mutableStateOf(false)
         private set
     var lastSuccessful by mutableIntStateOf(0)
@@ -34,17 +39,62 @@ object ImportController {
     var lastTotal by mutableIntStateOf(0)
         private set
 
+    @Synchronized
+    fun consumeSummary(): Summary? {
+        if (!hasSummary) return null
+        hasSummary = false
+        return Summary(lastSuccessful, lastFailed, lastTotal)
+    }
+
+    @Synchronized
+    fun consumeCancellation(): Boolean {
+        if (!lastCanceled) return false
+        lastCanceled = false
+        return true
+    }
+
+    fun summaryText(context: Context, summary: Summary): String = when {
+        summary.failed == 0 ->
+            context.getString(R.string.gallery_import_done_ok, summary.successful, summary.total)
+        summary.successful == 0 ->
+            context.getString(R.string.gallery_import_done_all_failed, summary.total)
+        else -> context.getString(
+            R.string.gallery_import_done_partial,
+            summary.successful, summary.total, summary.failed
+        )
+    }
+
     var completedBatches by mutableIntStateOf(0)
         private set
 
-    @Suppress("unused")
+    var paused by mutableStateOf(false)
+        private set
+
+    var lastCanceled by mutableStateOf(false)
+        private set
+
     private var job: Job? = null
+
+    fun togglePause() {
+        if (!importing) return
+        paused = !paused
+        EncLog.i(TAG, if (paused) "import paused by user" else "import resumed by user")
+    }
+
+    fun cancel() {
+        if (!importing) return
+        paused = false
+        EncLog.i(TAG, "import cancelled by user at $currentIndex/$currentTotal")
+        job?.cancel()
+    }
 
     fun start(appContext: Context, uris: List<Uri>, targetAlbumUuid: String?) {
         if (importing || uris.isEmpty()) return
 
         importing = true
         hasSummary = false
+        lastCanceled = false
+        paused = false
         currentIndex = 0
         currentTotal = uris.size
         currentDisplayName = ""
@@ -59,6 +109,9 @@ object ImportController {
                             currentTotal = progress.total
                         }
                         is PhotoImporter.Progress.FileStarted -> {
+                            while (paused) {
+                                kotlinx.coroutines.delay(150)
+                            }
                             currentIndex = progress.index
                             currentTotal = progress.total
                             currentDisplayName = progress.displayName
@@ -77,8 +130,12 @@ object ImportController {
                         }
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                lastCanceled = true
+                throw e
             } finally {
                 importing = false
+                paused = false
                 currentDisplayName = ""
                 completedBatches++
             }

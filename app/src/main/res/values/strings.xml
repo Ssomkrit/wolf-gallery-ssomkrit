@@ -36,7 +36,6 @@
     <string name="sort_option_name_za">Name (Z–A)</string>
     <string name="sort_dialog_btn_close">Close</string>
 
-    <string name="selection_count">%1$d selected</string>
     <string name="selection_cancel">Cancel selection</string>
 
     <string name="album_default_imported_name">Imported</string>
@@ -148,6 +147,7 @@
     <string name="op_progress_title_move">Moving media to \"%1$s\"</string>
     <string name="op_progress_title_copy">Copying media to \"%1$s\"</string>
     <string name="op_progress_title_trash">Moving to Trash</string>
+    <string name="op_progress_title_delete_permanent">Deleting permanently</string>
 
     <string name="file_rename_taken">A file with this name already exists</string>
     <string name="entry_dup_in_album">A file with this name already exists in this album</string>
@@ -177,4 +177,10 @@
     <string name="share_target_done">Added to the vault: %1$d</string>
     <string name="share_target_partial">Added: %1$d. Failed: %2$d.</string>
     <string name="share_target_close">Close</string>
+    <string name="export_folder_none">Not selected</string>
+    <string name="export_folder_internal">Internal storage</string>
+    <string name="export_folder_removable">Memory card (%1$s)</string>
+    <string name="export_fixed_folder_unavailable">Saved folder is unavailable right now — choose where to export</string>
+    <string name="import_picker_progress_title">Importing to vault</string>
+    <string name="import_canceled">Import cancelled</string>
 </resources>

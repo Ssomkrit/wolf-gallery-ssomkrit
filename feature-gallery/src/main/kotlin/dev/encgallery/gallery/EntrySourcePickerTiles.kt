@@ -172,11 +172,11 @@ private fun SrcMosaicQuadrant(
     val context = LocalContext.current
     val customCoverUuid = album?.meta?.coverEntryUuid
     val cacheKey = customCoverUuid ?: album?.firstEntry?.uuid
-    var bitmap by remember(cacheKey, album?.meta?.modifiedAt) {
+    var bitmap by remember(cacheKey, album?.meta?.modifiedAt, album?.meta?.coverRevision) {
         mutableStateOf<Bitmap?>(null)
     }
     if (album != null) {
-        LaunchedEffect(cacheKey, album.meta.modifiedAt) {
+        LaunchedEffect(cacheKey, album.meta.modifiedAt, album.meta.coverRevision) {
             if (customCoverUuid == null && album.firstEntry == null) return@LaunchedEffect
             bitmap = withContext(Dispatchers.IO) {
                 val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
@@ -293,13 +293,13 @@ private fun SrcAlbumTile(
     val context = LocalContext.current
     val customCoverUuid = summary.meta.coverEntryUuid
     val cacheKey = customCoverUuid ?: summary.firstEntry?.uuid
-    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt) {
+    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
         mutableStateOf<Bitmap?>(null)
     }
     val firstEntry = summary.firstEntry
     val isEmpty = customCoverUuid == null && firstEntry == null
     val emptyColors = emptyCoverColors()
-    LaunchedEffect(cacheKey, summary.meta.modifiedAt) {
+    LaunchedEffect(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
         if (customCoverUuid == null && firstEntry == null) return@LaunchedEffect
         coverBitmap = withContext(Dispatchers.IO) {
             val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)

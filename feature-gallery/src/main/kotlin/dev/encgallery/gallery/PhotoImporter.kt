@@ -61,6 +61,7 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
         val vaultDir = VaultPaths.albumDir(context, targetAlbumUuid)
         var succeeded = 0
         var failed = 0
+        val landed = ArrayList<Pair<java.io.File, java.io.File>>()
 
         uris.forEachIndexed { index, uri ->
 
@@ -118,6 +119,7 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
                     uuid = names.uuid,
                     originalFilename = displayName.takeIf { it != "<unknown>" }
                 )
+                landed.add(names.blob to names.thumb)
 
                 onProgress(
                     Progress.FileSucceeded(humanIndex, total, displayName, names.blob.length(), duration)
@@ -126,6 +128,7 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
 
                 cleanupBlobPair(names.blob, names.thumb)
                 EncLog.i(TAG, "import cancelled mid-batch on file ${humanIndex}/${total}")
+                rollbackLanded(landed)
                 throw e
             } catch (t: Throwable) {
 
@@ -171,6 +174,21 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
             )
             null
         }
+    }
+
+    private fun rollbackLanded(landed: List<Pair<java.io.File, java.io.File>>) {
+        if (landed.isEmpty()) return
+        var undone = 0
+        landed.asReversed().forEach { (blobFile, thumbFile) ->
+            try {
+                entries.deleteMeta(blobFile)
+            } catch (t: Throwable) {
+                EncLog.w(TAG, "rollback: meta of ${blobFile.name}: ${t.javaClass.simpleName}")
+            }
+            cleanupBlobPair(blobFile, thumbFile)
+            undone++
+        }
+        EncLog.i(TAG, "import cancelled — rolled back $undone already-imported file(s)")
     }
 
     private fun cleanupBlobPair(blobFile: java.io.File, thumbFile: java.io.File) {

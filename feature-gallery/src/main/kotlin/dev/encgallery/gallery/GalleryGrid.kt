@@ -73,6 +73,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -695,7 +696,7 @@ private fun SelectionTopBar(
                 )
             }
             Text(
-                text = stringResource(R.string.selection_count, count),
+                text = pluralStringResource(selCountRes(selectionKindOf(count, 0, 0)), count, count),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium
             )
@@ -928,18 +929,18 @@ private fun SelectionDeleteConfirmDialog(
     onConfirmDelete: () -> Unit
 ) {
     val bodyResId = if (trashEnabled) {
-        R.string.selection_delete_dialog_body
+        R.plurals.selection_delete_dialog_body
     } else {
-        R.string.selection_delete_dialog_body_permanent
+        R.plurals.selection_delete_dialog_body_permanent
     }
     InWindowDialog(
         onDismiss = onDismiss,
         title = {
-            Text(stringResource(R.string.selection_delete_dialog_title, count))
+            Text(pluralStringResource(R.plurals.selection_delete_dialog_title, count, count))
         },
         text = {
             Text(
-                text = stringResource(bodyResId),
+                text = pluralStringResource(bodyResId, count),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )
@@ -956,7 +957,7 @@ private fun SelectionDeleteConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.gallery_action_btn_close))
+                Text(stringResource(R.string.gallery_action_btn_cancel))
             }
         }
     )
@@ -1072,7 +1073,7 @@ private fun EntryDeleteConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.gallery_action_btn_close))
+                Text(stringResource(R.string.gallery_action_btn_cancel))
             }
         }
     )

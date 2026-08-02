@@ -162,7 +162,7 @@ fun TrashEntryViewer(
 
                 Text(
                     text = androidx.compose.ui.res.pluralStringResource(
-                        R.plurals.trash_delete_forever_dialog_body,
+                        R.plurals.trash_delete_forever_dialog_body_files,
                         1, 1
                     )
                 )

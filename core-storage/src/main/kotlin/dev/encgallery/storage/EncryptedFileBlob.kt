@@ -28,8 +28,40 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
 
     fun encryptEnvelope(input: InputStream, output: File) {
         val key = VaultDataKey.secretKey()
-        val (cipher, iv) = VaultDataKey.newEncryptCipher(key)
-        encryptStream(input, output, VERSION_2, cipher, iv)
+        writeAtomically(output) { out -> ChunkedBlob.encrypt(input, out, key) }
+    }
+
+    fun openChunked(input: File): ChunkedBlob.Reader =
+        ChunkedBlob.open(input, VaultDataKey.secretKey())
+
+    fun peekPlaintext(input: File, count: Int, wholeFileCap: Long = 24L * 1024 * 1024): ByteArray {
+        if (isChunked(input)) {
+            val reader = openChunked(input)
+            return try {
+                val want = minOf(count.toLong(), reader.plaintextSize).toInt()
+                val buf = ByteArray(want)
+                var off = 0
+                while (off < want) {
+                    val n = reader.readAt(off.toLong(), buf, off, want - off)
+                    if (n <= 0) break
+                    off += n
+                }
+                if (off == want) buf else buf.copyOf(off)
+            } finally {
+                reader.close()
+            }
+        }
+        if (input.length() > wholeFileCap) {
+            throw IOException("blob ${input.name} is too large to peek without chunking")
+        }
+        val all = decryptToBytes(input)
+        return if (all.size <= count) all else all.copyOf(count)
+    }
+
+    fun isChunked(input: File): Boolean = try {
+        readVersionByte(input) == ChunkedBlob.VERSION_3
+    } catch (t: Throwable) {
+        false
     }
 
     private fun encryptStream(
@@ -39,27 +71,32 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
         cipher: Cipher,
         iv: ByteArray
     ) {
+        writeAtomically(output) { out ->
+            out.write(MAGIC)
+            out.write(byteArrayOf(version))
+            out.write(RESERVED_ZEROS)
+            out.write(iv)
+
+            val buf = ByteArray(STREAM_BUFFER_BYTES)
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                val ct = cipher.update(buf, 0, n)
+                if (ct != null && ct.isNotEmpty()) out.write(ct)
+            }
+
+            val finalCt = cipher.doFinal()
+            if (finalCt.isNotEmpty()) out.write(finalCt)
+        }
+    }
+
+    private fun writeAtomically(output: File, body: (OutputStream) -> Unit) {
         val tmp = File(output.parentFile, "${output.name}.tmp")
         try {
             val fos = tmp.outputStream()
             BufferedOutputStream(fos, STREAM_BUFFER_BYTES).use { out ->
-                out.write(MAGIC)
-                out.write(byteArrayOf(version))
-                out.write(RESERVED_ZEROS)
-                out.write(iv)
-
-                val buf = ByteArray(STREAM_BUFFER_BYTES)
-                while (true) {
-                    val n = input.read(buf)
-                    if (n < 0) break
-                    val ct = cipher.update(buf, 0, n)
-                    if (ct != null && ct.isNotEmpty()) out.write(ct)
-                }
-
-                val finalCt = cipher.doFinal()
-                if (finalCt.isNotEmpty()) out.write(finalCt)
+                body(out)
                 out.flush()
-
                 fos.fd.sync()
             }
             java.nio.file.Files.move(
@@ -104,6 +141,10 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
     }
 
     private fun decryptInto(input: File, sink: OutputStream) {
+        if (readVersionByte(input) == ChunkedBlob.VERSION_3) {
+            ChunkedBlob.decryptInto(input, sink, VaultDataKey.secretKey())
+            return
+        }
         val raw = BufferedInputStream(input.inputStream(), STREAM_BUFFER_BYTES)
         try {
             val data = DataInputStream(raw)
@@ -178,7 +219,7 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
             EncLog.w(TAG, "migrate: unreadable header ${blobFile.name}: ${t.javaClass.simpleName}")
             return false
         }
-        if (version == VERSION_2) return true
+        if (version == VERSION_2 || version == ChunkedBlob.VERSION_3) return true
         if (version != VERSION_1) return false
 
         if (!scratchDir.exists()) scratchDir.mkdirs()
@@ -215,13 +256,15 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
     }
 
     private fun readVersionByte(file: File): Byte {
-        DataInputStream(BufferedInputStream(file.inputStream())).use { data ->
-            val magic = ByteArray(MAGIC.size)
-            data.readFully(magic)
-            if (!magic.contentEquals(MAGIC)) {
-                throw BlobFormatException("blob ${file.name} bad magic")
+        java.io.RandomAccessFile(file, "r").use { raf ->
+            val head = ByteArray(MAGIC.size + 1)
+            raf.readFully(head)
+            for (i in MAGIC.indices) {
+                if (head[i] != MAGIC[i]) {
+                    throw BlobFormatException("blob ${file.name} bad magic")
+                }
             }
-            return data.readByte()
+            return head[MAGIC.size]
         }
     }
 
@@ -401,6 +444,8 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
                 if (!badVersionRejected) allPass = false
 
                 NativeCrypto.secureZero(plaintextBytes)
+
+                if (!ChunkedBlob.runSelfTest(tempDir, log)) allPass = false
             } catch (t: Throwable) {
                 log("self-test threw: ${t.javaClass.simpleName}: ${t.message}")
                 allPass = false

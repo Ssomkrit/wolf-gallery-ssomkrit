@@ -11,7 +11,8 @@ data class AlbumMeta(
     val coverEntryUuid: String?,
     val coverCropRect: NormalizedRect?,
 
-    val pinned: Boolean = false
+    val pinned: Boolean = false,
+    val coverRevision: Long = 0L
 ) {
 
     fun toJsonBytes(): ByteArray = JSONObject().apply {
@@ -31,6 +32,7 @@ data class AlbumMeta(
         }
 
         if (pinned) put("pinned", true)
+        if (coverRevision != 0L) put("coverRevision", coverRevision)
     }.toString().toByteArray(Charsets.UTF_8)
 
     companion object {
@@ -61,7 +63,8 @@ data class AlbumMeta(
                             h = r.getDouble(3).toFloat()
                         )
                     } else null,
-                    pinned = root.optBoolean("pinned", false)
+                    pinned = root.optBoolean("pinned", false),
+                    coverRevision = root.optLong("coverRevision", 0L)
                 )
             } catch (_: Throwable) {
                 null

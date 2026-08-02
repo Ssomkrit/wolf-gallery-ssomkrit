@@ -3,6 +3,8 @@ package dev.encgallery.gallery
 import android.content.Context
 import dev.encgallery.crypto.KeystoreAesGcm
 import dev.encgallery.logging.EncLog
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import java.io.File
 
 enum class EntryBatchOp { MOVE, COPY }
@@ -23,7 +25,9 @@ object EntryConflictResolver {
         op: EntryBatchOp,
         keystore: KeystoreAesGcm,
         ask: suspend (fileName: String, suggested: String, nameTaken: (String) -> Boolean) -> FileConflictResolution,
-        onProgress: (done: Int, total: Int) -> Unit
+        onProgress: suspend (done: Int, total: Int) -> Unit,
+        onLanded: ((landedUuid: String) -> Unit)? = null,
+        onRenamed: ((landedUuid: String, previousName: String) -> Unit)? = null
     ): EntryBatchOutcome {
         val entriesRepo = EntriesRepository(keystore)
         val total = incoming.size
@@ -44,6 +48,7 @@ object EntryConflictResolver {
         var blanket: FileConflictChoice? = null
 
         incoming.forEachIndexed { idx, entry ->
+            coroutineContext.ensureActive()
             val rawName = entriesRepo.getMeta(entry.blobFile)?.originalFilename
             val key = rawName?.trim()?.lowercase()
             val collides = rawName != null && key != null && taken.contains(key)
@@ -81,18 +86,23 @@ object EntryConflictResolver {
                             }
                         }
                         perform(context, entry, destAlbumUuid, op, keystore, renameTo = null, entriesRepo)
-
+                            ?.let { onLanded?.invoke(it) }
                     }
                     FileConflictChoice.RENAME -> {
                         val finalName = typedName?.takeIf { it.isNotBlank() }
                             ?: nextFreeConflictName(rawName!!, taken)
                         val landed = perform(context, entry, destAlbumUuid, op, keystore, renameTo = finalName, entriesRepo)
-                        if (landed != null) renamed[landed] = finalName
+                        if (landed != null) {
+                            renamed[landed] = finalName
+                            onLanded?.invoke(landed)
+                            onRenamed?.invoke(landed, rawName!!)
+                        }
                         taken.add(finalName.trim().lowercase())
                     }
                 }
             } else {
                 perform(context, entry, destAlbumUuid, op, keystore, renameTo = null, entriesRepo)
+                    ?.let { onLanded?.invoke(it) }
                 if (key != null) taken.add(key)
             }
             onProgress(idx + 1, total)

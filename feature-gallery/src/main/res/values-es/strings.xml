@@ -19,12 +19,13 @@
     <string name="gallery_grid_header">Contenido de la caja fuerte (%1$d)</string>
     <string name="gallery_empty">La caja fuerte está vacía. Importa fotos o vídeos arriba.</string>
 
-    <string name="gallery_action_title">Entrada de la caja fuerte</string>
+    <string name="gallery_action_title">Archivo multimedia</string>
     <string name="gallery_action_size_line">Tamaño cifrado: %1$d KiB</string>
-    <string name="gallery_action_delete_warning">Se moverá a la papelera; restaurable durante 30 días.</string>
-    <string name="gallery_action_delete_warning_permanent">Se eliminará de forma permanente. Esto no se puede deshacer. (La papelera está desactivada en Ajustes.)</string>
+    <string name="gallery_action_delete_warning">El archivo multimedia se moverá a la papelera y podrás recuperarlo durante 30 días.</string>
+    <string name="gallery_action_delete_warning_permanent">La papelera está desactivada en Ajustes, así que el archivo multimedia se borrará de inmediato y no se podrá recuperar.</string>
     <string name="gallery_action_btn_delete">Eliminar</string>
     <string name="gallery_action_btn_close">Cerrar</string>
+    <string name="gallery_action_btn_cancel">Cancelar</string>
     <string name="gallery_action_btn_move">Mover…</string>
     <string name="gallery_action_btn_copy">Copiar…</string>
 
@@ -34,7 +35,6 @@
     <string name="gallery_action_move_failed">Error al mover (ver registro)</string>
     <string name="gallery_action_copy_failed">Error al copiar (ver registro)</string>
 
-    <string name="selection_count">%1$d seleccionados</string>
     <string name="selection_cancel">Cancelar selección</string>
     <string name="selection_btn_share">Compartir</string>
     <string name="selection_btn_delete">Eliminar</string>
@@ -53,9 +53,18 @@
     <string name="entry_rename_field_label">Nombre del archivo</string>
     <string name="entry_rename_btn_save">Guardar</string>
     <string name="selection_opt_single_select_only">Solo con un elemento seleccionado</string>
-    <string name="selection_delete_dialog_title">¿Eliminar %1$d elementos?</string>
-    <string name="selection_delete_dialog_body">Los elementos se moverán a la papelera y se pueden restaurar durante 30 días.</string>
-    <string name="selection_delete_dialog_body_permanent">Los elementos se eliminarán de forma permanente. Esto no se puede deshacer. (La papelera está desactivada en Ajustes.)</string>
+    <plurals name="selection_delete_dialog_title">
+        <item quantity="one">¿Eliminar %d archivo multimedia?</item>
+        <item quantity="other">¿Eliminar %d archivos multimedia?</item>
+    </plurals>
+    <plurals name="selection_delete_dialog_body">
+        <item quantity="one">El archivo multimedia se moverá a la papelera y podrás recuperarlo durante 30 días.</item>
+        <item quantity="other">Los archivos multimedia se moverán a la papelera y podrás recuperarlos durante 30 días.</item>
+    </plurals>
+    <plurals name="selection_delete_dialog_body_permanent">
+        <item quantity="one">La papelera está desactivada en Ajustes, así que el archivo multimedia se borrará de inmediato y no se podrá recuperar.</item>
+        <item quantity="other">La papelera está desactivada en Ajustes, así que los archivos multimedia seleccionados se borrarán de inmediato y no se podrán recuperar.</item>
+    </plurals>
 
     <string name="dest_picker_title_move">Mover al álbum</string>
     <string name="dest_picker_title_copy">Copiar al álbum</string>
@@ -64,8 +73,8 @@
     <string name="dest_picker_op_copy">Copiando</string>
     <string name="dest_picker_empty">No hay álbumes disponibles. Crea un álbum primero.</string>
     <plurals name="dest_picker_subtitle_count">
-        <item quantity="one">%d elemento</item>
-        <item quantity="other">%d elementos</item>
+        <item quantity="one">%d archivo multimedia</item>
+        <item quantity="other">%d archivos multimedia</item>
     </plurals>
 
     <string name="op_progress_title_move">Moviendo medios a «%1$s»</string>
@@ -95,7 +104,6 @@
         <item quantity="other">%d álbumes</item>
     </plurals>
 
-    <string name="album_sel_count">%1$d seleccionados</string>
     <string name="album_sel_cancel">Cancelar selección</string>
     <string name="album_sel_btn_group">Agrupar</string>
     <string name="album_sel_btn_move">Mover</string>
@@ -124,9 +132,18 @@
         <item quantity="other">%d álbumes</item>
     </plurals>
 
-    <string name="album_multi_delete_dialog_title">¿Eliminar %1$d álbumes?</string>
-    <string name="album_multi_delete_dialog_body">Los álbumes seleccionados se moverán a la papelera con todas sus fotos. Puedes restaurarlos durante 30 días.</string>
-    <string name="album_multi_delete_dialog_body_permanent">Los álbumes seleccionados y TODAS sus fotos se eliminarán de forma permanente. Esto no se puede deshacer. (La papelera está desactivada en Ajustes.)</string>
+    <plurals name="album_multi_delete_dialog_title">
+        <item quantity="one">¿Eliminar %d álbum?</item>
+        <item quantity="other">¿Eliminar %d álbumes?</item>
+    </plurals>
+    <plurals name="album_multi_delete_dialog_body">
+        <item quantity="one">El álbum con todos sus archivos multimedia se moverá a la papelera y podrás recuperarlo durante 30 días.</item>
+        <item quantity="other">Los álbumes seleccionados con todos sus archivos multimedia se moverán a la papelera y podrás recuperarlos durante 30 días.</item>
+    </plurals>
+    <plurals name="album_multi_delete_dialog_body_permanent">
+        <item quantity="one">La papelera está desactivada en Ajustes, así que el álbum y TODOS los archivos multimedia que contiene se borrarán de inmediato y no se podrán recuperar.</item>
+        <item quantity="other">La papelera está desactivada en Ajustes, así que los álbumes seleccionados y TODOS los archivos multimedia que contienen se borrarán de inmediato y no se podrán recuperar.</item>
+    </plurals>
 
     <string name="group_drilldown_back">Volver a los álbumes</string>
     <plurals name="group_drilldown_subtitle">
@@ -141,9 +158,15 @@
     <string name="group_rename_dialog_title">Renombrar grupo</string>
     <string name="group_delete_dialog_title">¿Eliminar el grupo?</string>
     <string name="group_delete_dialog_body_empty">El grupo vacío se moverá a la papelera. Restaurable durante 30 días.</string>
-    <string name="group_delete_dialog_body_empty_permanent">El grupo vacío se eliminará de forma permanente. El grupo está vacío, así que no se afecta ningún álbum. Esto no se puede deshacer. (La papelera está desactivada en Ajustes.)</string>
-    <string name="group_delete_dialog_body_with_albums">El grupo y los %1$d álbum(es) que contiene (con sus fotos) se moverán juntos a la papelera. Restaurable durante 30 días.</string>
-    <string name="group_delete_dialog_body_with_albums_permanent">El grupo se eliminará de forma permanente. Los %1$d álbum(es) que contiene NO se eliminan: vuelven a la lista de álbumes del nivel principal. (La papelera está desactivada en Ajustes.)</string>
+    <string name="group_delete_dialog_body_empty_permanent">La papelera está desactivada en Ajustes, así que este grupo vacío se borrará de inmediato y no se podrá recuperar. No contiene álbumes, así que nada más se ve afectado.</string>
+    <plurals name="group_delete_dialog_body_with_albums">
+        <item quantity="one">El grupo y el %d álbum que contiene, con todos sus archivos multimedia, se moverán juntos a la papelera. Recuperables durante 30 días.</item>
+        <item quantity="other">El grupo y los %d álbumes que contiene, con todos sus archivos multimedia, se moverán juntos a la papelera. Recuperables durante 30 días.</item>
+    </plurals>
+    <plurals name="group_delete_dialog_body_with_albums_permanent">
+        <item quantity="one">La papelera está desactivada en Ajustes, así que el grupo se borrará de inmediato. El %d álbum que contiene NO se eliminará: vuelve a la lista general de álbumes.</item>
+        <item quantity="other">La papelera está desactivada en Ajustes, así que el grupo se borrará de inmediato. Los %d álbumes que contiene NO se eliminarán: vuelven a la lista general de álbumes.</item>
+    </plurals>
     <string name="group_delete_btn_confirm">Eliminar grupo</string>
 
     <string name="fab_choose_title">Crear / Importar</string>
@@ -169,7 +192,7 @@
     <string name="viewer_video_play">Reproducir</string>
     <string name="viewer_video_pause">Pausar</string>
     <string name="viewer_video_seek">Buscar</string>
-    <string name="viewer_failed_title">No se pudo abrir esta entrada</string>
+    <string name="viewer_failed_title">No se pudo abrir el archivo multimedia</string>
     <string name="viewer_failed_body">Falló el descifrado o la decodificación. El blob podría estar dañado, o la clave maestra pudo haberse borrado. Consulta el registro para más detalles.</string>
     <string name="viewer_tap_to_close">Toca el botón ✕ o pulsa Atrás para cerrar.</string>
 
@@ -206,7 +229,7 @@
     <string name="wallpaper_crop_btn_save">Establecer</string>
     <string name="wallpaper_crop_loading">Cargando…</string>
 
-    <string name="viewer_info_dialog_title">Detalles de la entrada</string>
+    <string name="viewer_info_dialog_title">Detalles del archivo multimedia</string>
     <string name="viewer_info_label_filename">Nombre del archivo</string>
     <string name="viewer_info_value_no_filename">— (importado antes de 5.5e.5)</string>
     <string name="viewer_info_label_added">Añadido a la caja fuerte</string>
@@ -220,7 +243,7 @@
 
     <string name="viewer_share_chooser">Compartir mediante…</string>
 
-    <string name="viewer_delete_dialog_title">¿Eliminar esta entrada?</string>
+    <string name="viewer_delete_dialog_title">¿Eliminar este archivo multimedia?</string>
 
     <string name="search_field_hint">Buscar</string>
     <string name="search_close">Cerrar búsqueda</string>
@@ -255,9 +278,15 @@
 
     <string name="album_delete_dialog_title">¿Eliminar el álbum?</string>
     <string name="album_delete_dialog_body_empty">El álbum vacío se moverá a la papelera. Restaurable durante 30 días.</string>
-    <string name="album_delete_dialog_body_empty_permanent">El álbum vacío se eliminará de forma permanente. Esto no se puede deshacer. (La papelera está desactivada en Ajustes.)</string>
-    <string name="album_delete_dialog_body_with_entries">El álbum con los %1$d archivos que contiene se moverá a la papelera. Restaurable durante 30 días.</string>
-    <string name="album_delete_dialog_body_with_entries_permanent">El álbum con los %1$d archivos que contiene se eliminará de forma permanente. Esto no se puede deshacer. (La papelera está desactivada en Ajustes.)</string>
+    <string name="album_delete_dialog_body_empty_permanent">La papelera está desactivada en Ajustes, así que este álbum vacío se borrará de inmediato y no se podrá recuperar.</string>
+    <plurals name="album_delete_dialog_body_with_entries">
+        <item quantity="one">El álbum y el %d archivo multimedia que contiene se moverán a la papelera. Recuperables durante 30 días.</item>
+        <item quantity="other">El álbum y los %d archivos multimedia que contiene se moverán a la papelera. Recuperables durante 30 días.</item>
+    </plurals>
+    <plurals name="album_delete_dialog_body_with_entries_permanent">
+        <item quantity="one">La papelera está desactivada en Ajustes, así que el álbum y el %d archivo multimedia que contiene se borrarán de inmediato y no se podrán recuperar.</item>
+        <item quantity="other">La papelera está desactivada en Ajustes, así que el álbum y los %d archivos multimedia que contiene se borrarán de inmediato y no se podrán recuperar.</item>
+    </plurals>
     <string name="album_delete_btn_confirm">Eliminar</string>
 
     <string name="album_action_rename">Renombrar</string>
@@ -267,6 +296,7 @@
 
     <string name="cover_picker_title">Elegir portada</string>
     <string name="cover_picker_empty">El álbum está vacío: añade fotos antes de elegir una portada.</string>
+    <string name="cover_picker_current">Portada actual</string>
     <string name="cover_picker_back">Atrás</string>
     <string name="scroll_to_top">Ir arriba</string>
     <string name="cover_crop_title">Recortar portada</string>
@@ -287,9 +317,69 @@
     <string name="trash_screen_back">Atrás</string>
     <string name="trash_screen_empty">La papelera está vacía</string>
     <string name="trash_expired">Caducado</string>
-    <plurals name="trash_screen_count">
+    <plurals name="sel_count_files">
+        <item quantity="one">%d archivo multimedia seleccionado</item>
+        <item quantity="other">%d archivos multimedia seleccionados</item>
+    </plurals>
+    <plurals name="trash_screen_count_files">
+        <item quantity="one">%d archivo multimedia en la papelera</item>
+        <item quantity="other">%d archivos multimedia en la papelera</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_files">
+        <item quantity="one">Se eliminará %d archivo multimedia de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán %d archivos multimedia de forma permanente. Esto no se puede deshacer.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_files">
+        <item quantity="one">Se eliminará el único archivo multimedia de la papelera de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán los %d archivos multimedia de la papelera de forma permanente. Esto no se puede deshacer.</item>
+    </plurals>
+    <plurals name="sel_count_albums">
+        <item quantity="one">%d álbum seleccionado</item>
+        <item quantity="other">%d álbumes seleccionados</item>
+    </plurals>
+    <plurals name="trash_screen_count_albums">
+        <item quantity="one">%d álbum en la papelera</item>
+        <item quantity="other">%d álbumes en la papelera</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_albums">
+        <item quantity="one">Se eliminará %d álbum de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán %d álbumes de forma permanente. Esto no se puede deshacer.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_albums">
+        <item quantity="one">Se eliminará el único álbum de la papelera de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán los %d álbumes de la papelera de forma permanente. Esto no se puede deshacer.</item>
+    </plurals>
+    <plurals name="sel_count_groups">
+        <item quantity="one">%d grupo seleccionado</item>
+        <item quantity="other">%d grupos seleccionados</item>
+    </plurals>
+    <plurals name="trash_screen_count_groups">
+        <item quantity="one">%d grupo en la papelera</item>
+        <item quantity="other">%d grupos en la papelera</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_groups">
+        <item quantity="one">Se eliminará %d grupo de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán %d grupos de forma permanente. Esto no se puede deshacer.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_groups">
+        <item quantity="one">Se eliminará el único grupo de la papelera de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán los %d grupos de la papelera de forma permanente. Esto no se puede deshacer.</item>
+    </plurals>
+    <plurals name="sel_count_mixed">
+        <item quantity="one">%d elemento seleccionado</item>
+        <item quantity="other">%d elementos seleccionados</item>
+    </plurals>
+    <plurals name="trash_screen_count_mixed">
         <item quantity="one">%d elemento en la papelera</item>
         <item quantity="other">%d elementos en la papelera</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_mixed">
+        <item quantity="one">Se eliminará %d elemento de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán %d elementos de forma permanente. Esto no se puede deshacer.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_mixed">
+        <item quantity="one">Se eliminará el único elemento de la papelera de forma permanente. Esto no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán los %d elementos de la papelera de forma permanente. Esto no se puede deshacer.</item>
     </plurals>
     <plurals name="trash_days_remaining">
         <item quantity="one">%dd</item>
@@ -297,24 +387,18 @@
     </plurals>
 
     <string name="trash_sel_cancel">Cancelar selección</string>
-    <string name="trash_sel_count">%1$d seleccionados</string>
+    
     <string name="trash_action_restore">Restaurar</string>
 
     <string name="trash_action_delete_forever">Eliminar para siempre</string>
     <string name="trash_action_empty">Vaciar la papelera</string>
 
     <string name="trash_delete_forever_dialog_title">¿Eliminar para siempre?</string>
-    <plurals name="trash_delete_forever_dialog_body">
-        <item quantity="one">%d elemento se eliminará de forma permanente. Esto no se puede deshacer.</item>
-        <item quantity="other">%d elementos se eliminarán de forma permanente. Esto no se puede deshacer.</item>
-    </plurals>
+    
     <string name="trash_delete_forever_btn_confirm">Eliminar</string>
 
     <string name="trash_empty_dialog_title">¿Vaciar la papelera?</string>
-    <plurals name="trash_empty_dialog_body">
-        <item quantity="one">Se eliminará de forma permanente %d elemento de la papelera. Esto no se puede deshacer.</item>
-        <item quantity="other">Se eliminarán de forma permanente los %d elementos de la papelera. Esto no se puede deshacer.</item>
-    </plurals>
+    
     <string name="trash_empty_btn_confirm">Vaciar</string>
 
     <string name="trash_dialog_btn_cancel">Cancelar</string>
@@ -329,4 +413,8 @@
     </plurals>
     <string name="trash_album_unnamed">Álbum sin título</string>
     <string name="trash_group_unnamed">Grupo sin título</string>
+    <string name="op_progress_pause">Pausar</string>
+    <string name="op_progress_resume">Reanudar</string>
+    <string name="op_progress_cancel">Cancelar</string>
+    <string name="trash_action_restore_all">Restaurar todo</string>
 </resources>

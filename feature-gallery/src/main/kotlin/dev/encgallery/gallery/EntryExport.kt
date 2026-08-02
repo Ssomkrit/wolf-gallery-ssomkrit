@@ -8,7 +8,9 @@ import dev.encgallery.crypto.KeystoreAesGcm
 import dev.encgallery.logging.EncLog
 import dev.encgallery.storage.EncryptedFileBlob
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 
 data class AlbumExportBundle(
     val folderName: String,
@@ -32,7 +34,7 @@ object EntryExport {
         entry: VaultEntry,
         uri: Uri,
         keystore: KeystoreAesGcm,
-        onProgress: ((done: Int, total: Int) -> Unit)? = null
+        onProgress: (suspend (done: Int, total: Int) -> Unit)? = null
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             onProgress?.invoke(0, 1)
@@ -64,7 +66,7 @@ object EntryExport {
         entries: List<VaultEntry>,
         treeUri: Uri,
         keystore: KeystoreAesGcm,
-        onProgress: ((done: Int, total: Int) -> Unit)? = null
+        onProgress: (suspend (done: Int, total: Int) -> Unit)? = null
     ): Pair<Int, Int> = withContext(Dispatchers.IO) {
         if (entries.isEmpty()) return@withContext 0 to 0
         val resolver = context.contentResolver
@@ -78,6 +80,7 @@ object EntryExport {
         var processed = 0
         onProgress?.invoke(0, entries.size)
         entries.forEach { entry ->
+            coroutineContext.ensureActive()
             val name = uniqueName(resolveName(repo, entry), usedNames)
             usedNames.add(name)
             if (writeEntryInto(resolver, parentDocUri, name, entry, keystore)) ok++
@@ -93,7 +96,7 @@ object EntryExport {
         albums: List<AlbumExportBundle>,
         treeUri: Uri,
         keystore: KeystoreAesGcm,
-        onProgress: ((done: Int, total: Int) -> Unit)? = null
+        onProgress: (suspend (done: Int, total: Int) -> Unit)? = null
     ): Pair<Int, Int> = withContext(Dispatchers.IO) {
         val totalFiles = albums.sumOf { it.entries.size }
         if (totalFiles == 0) return@withContext 0 to 0
@@ -134,6 +137,7 @@ object EntryExport {
             }
             val usedNames = HashSet<String>()
             album.entries.forEach { entry ->
+                coroutineContext.ensureActive()
                 val name = uniqueName(resolveName(repo, entry), usedNames)
                 usedNames.add(name)
                 if (writeEntryInto(resolver, dirUri, name, entry, keystore)) ok++
@@ -161,7 +165,7 @@ object EntryExport {
                 name
             )
             if (docUri == null) {
-                EncLog.w(TAG, "export: createDocument null for ${entry.uuid}")
+                EncLog.w(TAG, "export: createDocument returned null for ${entry.uuid} (name '$name')")
                 return false
             }
             val opened = resolver.openOutputStream(docUri)
@@ -175,7 +179,11 @@ object EntryExport {
             }
             true
         } catch (t: Throwable) {
-            EncLog.w(TAG, "export: ${entry.uuid} failed: ${t.javaClass.simpleName}")
+            val cause = t.cause?.let { " <- ${it.javaClass.simpleName}: ${it.message}" }.orEmpty()
+            EncLog.w(
+                TAG,
+                "export: ${entry.uuid} failed: ${t.javaClass.simpleName}: ${t.message}$cause"
+            )
             docUri?.let {
                 try {
                     DocumentsContract.deleteDocument(resolver, it)

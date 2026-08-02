@@ -33,7 +33,6 @@
     <string name="sort_option_name_za">الاسم (ي–أ)</string>
     <string name="sort_dialog_btn_close">إغلاق</string>
 
-    <string name="selection_count">محدّد: %1$d</string>
     <string name="selection_cancel">إلغاء التحديد</string>
 
     <string name="album_default_imported_name">المستوردة</string>
@@ -46,6 +45,7 @@
     <string name="op_progress_title_move">نقل الوسائط إلى «%1$s»</string>
     <string name="op_progress_title_copy">نسخ الوسائط إلى «%1$s»</string>
     <string name="op_progress_title_trash">النقل إلى المهملات</string>
+    <string name="op_progress_title_delete_permanent">حذف نهائي</string>
 
     <string name="file_rename_taken">يوجد ملف بهذا الاسم بالفعل</string>
     <string name="entry_dup_in_album">يوجد ملف بهذا الاسم في هذا الألبوم بالفعل</string>
@@ -176,4 +176,10 @@
     <string name="share_target_done">تمت الإضافة إلى الخزنة: %1$d</string>
     <string name="share_target_partial">تمت الإضافة: %1$d. فشل: %2$d.</string>
     <string name="share_target_close">إغلاق</string>
+    <string name="export_folder_none">غير محددة</string>
+    <string name="export_folder_internal">الذاكرة الداخلية</string>
+    <string name="export_folder_removable">بطاقة الذاكرة (%1$s)</string>
+    <string name="export_fixed_folder_unavailable">المجلد المحفوظ غير متاح الآن — اختر مكان التصدير</string>
+    <string name="import_picker_progress_title">الاستيراد إلى الخزنة</string>
+    <string name="import_canceled">أُلغي الاستيراد</string>
 </resources>

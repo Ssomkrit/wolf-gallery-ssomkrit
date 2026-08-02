@@ -1,0 +1,13 @@
+Large photos and videos now import reliably. Encryption inside the vault was rebuilt to work through a file in small pieces instead of holding all of it in memory at once, so file size is no longer a limit. Imports that used to fail on big videos go through, and they finish faster than before.
+
+Video playback changed with it. A video is now read straight out of the vault as it plays, piece by piece, so it no longer has to be decrypted into a temporary file before it starts. That temporary copy is gone entirely, and a video opens right away no matter how large it is.
+
+Videos added before this update still play, and seeking through them still works, but they keep the old behaviour: the whole file is decrypted first, so a large one takes a while to open and moving through the gallery around it feels slow. Nothing is damaged and nothing needs repairing. Importing such a video again is what moves it to the new format, after which it opens immediately like the rest.
+
+Long operations can be paused and cancelled, and cancelling puts everything back the way it was. Imported files are removed, copies are removed, moved files return to their original album under their original name, and files sent to Trash are restored where they were. Deleting to Trash can be cancelled too. There is one deliberate exception: when exporting to your device, files already written out are left alone, because those are your files in your own storage.
+
+Albums no longer jump to the top of the list when you rename one or change its cover. Sorting by date follows what is actually inside an album.
+
+The crop frame for album covers and wallpapers can be dragged by all four sides and all four corners, and a wallpaper is set exactly as you framed it. The current cover is now marked in the cover picker, and a scroll to top button was added to the cover, folder, group and Trash screens.
+
+Translations have been improved and refined. Fixed a bug when restoring a group from Trash.

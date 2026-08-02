@@ -23,12 +23,13 @@
     <string name="gallery_grid_header">Vault contents (%1$d)</string>
     <string name="gallery_empty">Vault is empty. Import photos or videos above.</string>
 
-    <string name="gallery_action_title">Vault entry</string>
+    <string name="gallery_action_title">Media file</string>
     <string name="gallery_action_size_line">Encrypted size: %1$d KiB</string>
-    <string name="gallery_action_delete_warning">Will be moved to Trash; restorable for 30 days.</string>
-    <string name="gallery_action_delete_warning_permanent">Will be permanently deleted. This cannot be undone. (Trash is disabled in Settings.)</string>
+    <string name="gallery_action_delete_warning">The media file will be moved to Trash and can be restored within 30 days.</string>
+    <string name="gallery_action_delete_warning_permanent">Trash is disabled in Settings, so this media file will be erased right away and cannot be brought back.</string>
     <string name="gallery_action_btn_delete">Delete</string>
     <string name="gallery_action_btn_close">Close</string>
+    <string name="gallery_action_btn_cancel">Cancel</string>
     <string name="gallery_action_btn_move">Move…</string>
     <string name="gallery_action_btn_copy">Copy…</string>
 
@@ -38,7 +39,6 @@
     <string name="gallery_action_move_failed">Move failed (see log)</string>
     <string name="gallery_action_copy_failed">Copy failed (see log)</string>
 
-    <string name="selection_count">%1$d selected</string>
     <string name="selection_cancel">Cancel selection</string>
     <string name="selection_btn_share">Share</string>
     <string name="selection_btn_delete">Delete</string>
@@ -60,9 +60,18 @@
     <string name="entry_rename_btn_save">Save</string>
 
     <string name="selection_opt_single_select_only">Only with one item selected</string>
-    <string name="selection_delete_dialog_title">Delete %1$d items?</string>
-    <string name="selection_delete_dialog_body">Items will be moved to Trash and can be restored within 30 days.</string>
-    <string name="selection_delete_dialog_body_permanent">Items will be permanently deleted. This cannot be undone. (Trash is disabled in Settings.)</string>
+    <plurals name="selection_delete_dialog_title">
+        <item quantity="one">Delete %d media file?</item>
+        <item quantity="other">Delete %d media files?</item>
+    </plurals>
+    <plurals name="selection_delete_dialog_body">
+        <item quantity="one">The media file will be moved to Trash and can be restored within 30 days.</item>
+        <item quantity="other">The media files will be moved to Trash and can be restored within 30 days.</item>
+    </plurals>
+    <plurals name="selection_delete_dialog_body_permanent">
+        <item quantity="one">Trash is disabled in Settings, so the media file will be erased right away and cannot be brought back.</item>
+        <item quantity="other">Trash is disabled in Settings, so the selected media files will be erased right away and cannot be brought back.</item>
+    </plurals>
 
     <string name="dest_picker_title_move">Move to album</string>
     <string name="dest_picker_title_copy">Copy to album</string>
@@ -71,8 +80,8 @@
     <string name="dest_picker_op_copy">Copying</string>
     <string name="dest_picker_empty">No albums available. Create an album first.</string>
     <plurals name="dest_picker_subtitle_count">
-        <item quantity="one">%d item</item>
-        <item quantity="other">%d items</item>
+        <item quantity="one">%d media file</item>
+        <item quantity="other">%d media files</item>
     </plurals>
 
     <string name="op_progress_title_move">Moving media to \"%1$s\"</string>
@@ -102,7 +111,6 @@
         <item quantity="other">%d albums</item>
     </plurals>
 
-    <string name="album_sel_count">%1$d selected</string>
     <string name="album_sel_cancel">Cancel selection</string>
     <string name="album_sel_btn_group">Group</string>
     <string name="album_sel_btn_move">Move</string>
@@ -131,9 +139,18 @@
         <item quantity="other">%d albums</item>
     </plurals>
 
-    <string name="album_multi_delete_dialog_title">Delete %1$d albums?</string>
-    <string name="album_multi_delete_dialog_body">Selected albums will be moved to Trash with all their photos. You can restore them within 30 days.</string>
-    <string name="album_multi_delete_dialog_body_permanent">Selected albums and ALL their photos will be permanently deleted. This cannot be undone. (Trash is disabled in Settings.)</string>
+    <plurals name="album_multi_delete_dialog_title">
+        <item quantity="one">Delete %d album?</item>
+        <item quantity="other">Delete %d albums?</item>
+    </plurals>
+    <plurals name="album_multi_delete_dialog_body">
+        <item quantity="one">The album with all its media files will be moved to Trash. You can restore it within 30 days.</item>
+        <item quantity="other">The selected albums with all their media files will be moved to Trash. You can restore them within 30 days.</item>
+    </plurals>
+    <plurals name="album_multi_delete_dialog_body_permanent">
+        <item quantity="one">Trash is disabled in Settings, so the album and EVERY media file inside it will be erased right away and cannot be brought back.</item>
+        <item quantity="other">Trash is disabled in Settings, so the selected albums and EVERY media file inside them will be erased right away and cannot be brought back.</item>
+    </plurals>
 
     <string name="group_drilldown_back">Back to albums</string>
     <plurals name="group_drilldown_subtitle">
@@ -148,9 +165,15 @@
     <string name="group_rename_dialog_title">Rename group</string>
     <string name="group_delete_dialog_title">Delete group?</string>
     <string name="group_delete_dialog_body_empty">Empty group will be moved to Trash. Restorable within 30 days.</string>
-    <string name="group_delete_dialog_body_empty_permanent">Empty group will be permanently deleted. The group is empty so no albums are affected. This cannot be undone. (Trash is disabled in Settings.)</string>
-    <string name="group_delete_dialog_body_with_albums">Group and all %1$d album(s) inside (with their photos) will be moved to Trash together. Restorable within 30 days.</string>
-    <string name="group_delete_dialog_body_with_albums_permanent">Group will be permanently deleted. The %1$d album(s) inside are NOT deleted — they return to the top-level albums list. (Trash is disabled in Settings.)</string>
+    <string name="group_delete_dialog_body_empty_permanent">Trash is disabled in Settings, so this empty group will be erased right away and cannot be brought back. It holds no albums, so nothing else is affected.</string>
+    <plurals name="group_delete_dialog_body_with_albums">
+        <item quantity="one">The group and the %d album inside, with all their media files, will be moved to Trash together. Restorable within 30 days.</item>
+        <item quantity="other">The group and all %d albums inside, with all their media files, will be moved to Trash together. Restorable within 30 days.</item>
+    </plurals>
+    <plurals name="group_delete_dialog_body_with_albums_permanent">
+        <item quantity="one">Trash is disabled in Settings, so the group will be erased right away. The %d album inside will NOT be deleted — it returns to the top-level albums list.</item>
+        <item quantity="other">Trash is disabled in Settings, so the group will be erased right away. The %d albums inside will NOT be deleted — they return to the top-level albums list.</item>
+    </plurals>
     <string name="group_delete_btn_confirm">Delete group</string>
 
     <string name="fab_choose_title">Create / Import</string>
@@ -178,7 +201,7 @@
     <string name="viewer_video_play">Play</string>
     <string name="viewer_video_pause">Pause</string>
     <string name="viewer_video_seek">Seek</string>
-    <string name="viewer_failed_title">Could not open this entry</string>
+    <string name="viewer_failed_title">Could not open this media file</string>
     <string name="viewer_failed_body">Decryption or decoding failed. The blob might be corrupt, or the master key may have been wiped. See log for details.</string>
     <string name="viewer_tap_to_close">Tap the ✕ button or press Back to close.</string>
 
@@ -215,7 +238,7 @@
     <string name="wallpaper_crop_btn_save">Set</string>
     <string name="wallpaper_crop_loading">Loading…</string>
 
-    <string name="viewer_info_dialog_title">Entry details</string>
+    <string name="viewer_info_dialog_title">Media file details</string>
     <string name="viewer_info_label_filename">Filename</string>
     <string name="viewer_info_value_no_filename">— (imported before 5.5e.5)</string>
     <string name="viewer_info_label_added">Added to vault</string>
@@ -229,7 +252,7 @@
 
     <string name="viewer_share_chooser">Share via…</string>
 
-    <string name="viewer_delete_dialog_title">Delete this entry?</string>
+    <string name="viewer_delete_dialog_title">Delete this media file?</string>
 
     <string name="search_field_hint">Search</string>
     <string name="search_close">Close search</string>
@@ -268,9 +291,15 @@
 
     <string name="album_delete_dialog_title">Delete album?</string>
     <string name="album_delete_dialog_body_empty">Empty album will be moved to Trash. Restorable within 30 days.</string>
-    <string name="album_delete_dialog_body_empty_permanent">Empty album will be permanently deleted. This cannot be undone. (Trash is disabled in Settings.)</string>
-    <string name="album_delete_dialog_body_with_entries">Album with all %1$d files inside will be moved to Trash. Restorable within 30 days.</string>
-    <string name="album_delete_dialog_body_with_entries_permanent">Album with all %1$d files inside will be permanently deleted. This cannot be undone. (Trash is disabled in Settings.)</string>
+    <string name="album_delete_dialog_body_empty_permanent">Trash is disabled in Settings, so this empty album will be erased right away and cannot be brought back.</string>
+    <plurals name="album_delete_dialog_body_with_entries">
+        <item quantity="one">The album and the %d media file inside will be moved to Trash. Restorable within 30 days.</item>
+        <item quantity="other">The album and all %d media files inside will be moved to Trash. Restorable within 30 days.</item>
+    </plurals>
+    <plurals name="album_delete_dialog_body_with_entries_permanent">
+        <item quantity="one">Trash is disabled in Settings, so the album and the %d media file inside will be erased right away and cannot be brought back.</item>
+        <item quantity="other">Trash is disabled in Settings, so the album and all %d media files inside will be erased right away and cannot be brought back.</item>
+    </plurals>
     <string name="album_delete_btn_confirm">Delete</string>
 
     <string name="album_action_rename">Rename</string>
@@ -280,6 +309,7 @@
 
     <string name="cover_picker_title">Choose cover</string>
     <string name="cover_picker_empty">Album is empty — add photos before picking a cover.</string>
+    <string name="cover_picker_current">Current cover</string>
     <string name="cover_picker_back">Back</string>
     <string name="scroll_to_top">Scroll to top</string>
     <string name="cover_crop_title">Crop cover</string>
@@ -300,9 +330,69 @@
     <string name="trash_screen_back">Back</string>
     <string name="trash_screen_empty">Trash is empty</string>
     <string name="trash_expired">Expired</string>
-    <plurals name="trash_screen_count">
+    <plurals name="sel_count_files">
+        <item quantity="one">%d media file selected</item>
+        <item quantity="other">%d media files selected</item>
+    </plurals>
+    <plurals name="trash_screen_count_files">
+        <item quantity="one">%d media file in Trash</item>
+        <item quantity="other">%d media files in Trash</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_files">
+        <item quantity="one">%d media file will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">%d media files will be permanently deleted. This cannot be undone.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_files">
+        <item quantity="one">The only media file in Trash will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">All %d media files in Trash will be permanently deleted. This cannot be undone.</item>
+    </plurals>
+    <plurals name="sel_count_albums">
+        <item quantity="one">%d album selected</item>
+        <item quantity="other">%d albums selected</item>
+    </plurals>
+    <plurals name="trash_screen_count_albums">
+        <item quantity="one">%d album in Trash</item>
+        <item quantity="other">%d albums in Trash</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_albums">
+        <item quantity="one">%d album will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">%d albums will be permanently deleted. This cannot be undone.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_albums">
+        <item quantity="one">The only album in Trash will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">All %d albums in Trash will be permanently deleted. This cannot be undone.</item>
+    </plurals>
+    <plurals name="sel_count_groups">
+        <item quantity="one">%d group selected</item>
+        <item quantity="other">%d groups selected</item>
+    </plurals>
+    <plurals name="trash_screen_count_groups">
+        <item quantity="one">%d group in Trash</item>
+        <item quantity="other">%d groups in Trash</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_groups">
+        <item quantity="one">%d group will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">%d groups will be permanently deleted. This cannot be undone.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_groups">
+        <item quantity="one">The only group in Trash will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">All %d groups in Trash will be permanently deleted. This cannot be undone.</item>
+    </plurals>
+    <plurals name="sel_count_mixed">
+        <item quantity="one">%d item selected</item>
+        <item quantity="other">%d items selected</item>
+    </plurals>
+    <plurals name="trash_screen_count_mixed">
         <item quantity="one">%d item in Trash</item>
         <item quantity="other">%d items in Trash</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_mixed">
+        <item quantity="one">%d item will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">%d items will be permanently deleted. This cannot be undone.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_mixed">
+        <item quantity="one">The only item in Trash will be permanently deleted. This cannot be undone.</item>
+        <item quantity="other">All %d items in Trash will be permanently deleted. This cannot be undone.</item>
     </plurals>
     <plurals name="trash_days_remaining">
         <item quantity="one">%dd</item>
@@ -310,24 +400,18 @@
     </plurals>
 
     <string name="trash_sel_cancel">Cancel selection</string>
-    <string name="trash_sel_count">%1$d selected</string>
+    
     <string name="trash_action_restore">Restore</string>
 
     <string name="trash_action_delete_forever">Delete forever</string>
     <string name="trash_action_empty">Empty Trash</string>
 
     <string name="trash_delete_forever_dialog_title">Delete forever?</string>
-    <plurals name="trash_delete_forever_dialog_body">
-        <item quantity="one">%d item will be permanently deleted. This cannot be undone.</item>
-        <item quantity="other">%d items will be permanently deleted. This cannot be undone.</item>
-    </plurals>
+    
     <string name="trash_delete_forever_btn_confirm">Delete</string>
 
     <string name="trash_empty_dialog_title">Empty Trash?</string>
-    <plurals name="trash_empty_dialog_body">
-        <item quantity="one">All %d item in Trash will be permanently deleted. This cannot be undone.</item>
-        <item quantity="other">All %d items in Trash will be permanently deleted. This cannot be undone.</item>
-    </plurals>
+    
     <string name="trash_empty_btn_confirm">Empty</string>
 
     <string name="trash_dialog_btn_cancel">Cancel</string>
@@ -342,4 +426,8 @@
     </plurals>
     <string name="trash_album_unnamed">Untitled album</string>
     <string name="trash_group_unnamed">Untitled group</string>
+    <string name="op_progress_pause">Pause</string>
+    <string name="op_progress_resume">Resume</string>
+    <string name="op_progress_cancel">Cancel</string>
+    <string name="trash_action_restore_all">Restore all</string>
 </resources>

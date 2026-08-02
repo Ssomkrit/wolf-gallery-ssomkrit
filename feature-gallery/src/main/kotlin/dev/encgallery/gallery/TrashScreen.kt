@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -142,10 +143,12 @@ fun TrashScreen(
                     title = {
                         Column {
                             if (inSelectionMode) {
+                                val selectedRecords = records.filter { it.uuid in selectedUuids }
                                 Text(
-                                    text = stringResource(
-                                        R.string.trash_sel_count,
-                                        selectedUuids.size
+                                    text = pluralStringResource(
+                                        selCountRes(trashRecordKind(selectedRecords)),
+                                        selectedRecords.size,
+                                        selectedRecords.size
                                     ),
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
@@ -160,7 +163,7 @@ fun TrashScreen(
                                 )
                                 Text(
                                     text = pluralStringResource(
-                                        R.plurals.trash_screen_count,
+                                        trashScreenCountRes(trashRecordKind(records)),
                                         records.size,
                                         records.size
                                     ),
@@ -189,25 +192,14 @@ fun TrashScreen(
                             )
                         }
                     },
-                    actions = {
-
-                        if (!inSelectionMode && records.isNotEmpty()) {
-                            TextButton(
-                                onClick = { showEmptyTrashDialog = true },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
-                                )
-                            ) {
-                                Text(stringResource(R.string.trash_action_empty))
-                            }
-                        }
-                    },
+                    actions = {},
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 )
             }
         ) { innerPadding ->
+            val trashGridState = rememberLazyGridState()
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -236,13 +228,14 @@ fun TrashScreen(
                     }
                 } else {
                     LazyVerticalGrid(
+                        state = trashGridState,
                         modifier = Modifier.fillMaxSize(),
                         columns = GridCells.Fixed(columns),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(
                             start = 8.dp, end = 8.dp,
                             top = 8.dp,
 
-                            bottom = if (inSelectionMode) 96.dp else 8.dp
+                            bottom = if (inSelectionMode || records.isNotEmpty()) 96.dp else 8.dp
                         ),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -277,6 +270,13 @@ fun TrashScreen(
                             )
                         }
                     }
+                    ScrollToTopButton(
+                        state = trashGridState,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 76.dp),
+                        appearAfterIndex = columns * 4 - 1
+                    )
                 }
 
                 if (inSelectionMode) {
@@ -287,7 +287,17 @@ fun TrashScreen(
                             clearSelection()
                             onRestoreSelection(snapshot)
                         },
+                        restoreLabel = stringResource(R.string.trash_action_restore),
                         onPermanentDelete = { showDeleteForeverDialog = true },
+                        deleteLabel = stringResource(R.string.trash_action_delete_forever),
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
+                } else if (records.isNotEmpty()) {
+                    TrashSelectionBottomBar(
+                        onRestore = { onRestoreSelection(records.map { it.uuid }.toSet()) },
+                        restoreLabel = stringResource(R.string.trash_action_restore_all),
+                        onPermanentDelete = { showEmptyTrashDialog = true },
+                        deleteLabel = stringResource(R.string.trash_action_empty),
                         modifier = Modifier.align(Alignment.BottomCenter)
                     )
                 }
@@ -295,14 +305,15 @@ fun TrashScreen(
         }
 
         if (showDeleteForeverDialog) {
-            val count = selectedUuids.size
+            val selectedRecords = records.filter { it.uuid in selectedUuids }
+            val count = selectedRecords.size
             InWindowDialog(
                 onDismiss = { showDeleteForeverDialog = false },
                 title = { Text(stringResource(R.string.trash_delete_forever_dialog_title)) },
                 text = {
                     Text(
                         pluralStringResource(
-                            R.plurals.trash_delete_forever_dialog_body,
+                            trashPurgeBodyRes(trashRecordKind(selectedRecords)),
                             count, count
                         )
                     )
@@ -338,7 +349,7 @@ fun TrashScreen(
                 text = {
                     Text(
                         pluralStringResource(
-                            R.plurals.trash_empty_dialog_body,
+                            trashEmptyBodyRes(trashRecordKind(records)),
                             count, count
                         )
                     )
@@ -844,7 +855,9 @@ private fun DaysRemainingBadge(
 @Composable
 private fun TrashSelectionBottomBar(
     onRestore: () -> Unit,
+    restoreLabel: String,
     onPermanentDelete: () -> Unit,
+    deleteLabel: String,
     modifier: Modifier = Modifier
 ) {
     val sysBars = WindowInsets.systemBars.asPaddingValues()
@@ -867,12 +880,12 @@ private fun TrashSelectionBottomBar(
         ) {
             TrashBarItem(
                 icon = Icons.Default.Refresh,
-                label = stringResource(R.string.trash_action_restore),
+                label = restoreLabel,
                 onClick = onRestore
             )
             TrashBarItem(
                 icon = Icons.Default.Delete,
-                label = stringResource(R.string.trash_action_delete_forever),
+                label = deleteLabel,
                 onClick = onPermanentDelete,
                 tint = MaterialTheme.colorScheme.error
             )
@@ -890,22 +903,22 @@ private fun TrashBarItem(
 ) {
     val effectiveTint = if (enabled) tint
     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-    Column(
+    Row(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         ThemedIcon(
             vector = icon,
             contentDescription = null,
             tint = effectiveTint
         )
-        Spacer(Modifier.height(2.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelLarge,
             color = effectiveTint
         )
     }

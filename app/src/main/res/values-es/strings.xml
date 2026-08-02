@@ -33,7 +33,6 @@
     <string name="sort_option_name_za">Nombre (Z–A)</string>
     <string name="sort_dialog_btn_close">Cerrar</string>
 
-    <string name="selection_count">%1$d seleccionados</string>
     <string name="selection_cancel">Cancelar selección</string>
 
     <string name="album_default_imported_name">Importados</string>
@@ -46,6 +45,7 @@
     <string name="op_progress_title_move">Moviendo medios a «%1$s»</string>
     <string name="op_progress_title_copy">Copiando medios a «%1$s»</string>
     <string name="op_progress_title_trash">Moviendo a la papelera</string>
+    <string name="op_progress_title_delete_permanent">Eliminando de forma permanente</string>
 
     <string name="file_rename_taken">Ya existe un archivo con este nombre</string>
     <string name="entry_dup_in_album">Ya existe un archivo con este nombre en este álbum</string>
@@ -176,4 +176,10 @@
     <string name="share_target_done">Añadido a la caja fuerte: %1$d</string>
     <string name="share_target_partial">Añadidos: %1$d. Fallidos: %2$d.</string>
     <string name="share_target_close">Cerrar</string>
+    <string name="export_folder_none">Sin seleccionar</string>
+    <string name="export_folder_internal">Almacenamiento interno</string>
+    <string name="export_folder_removable">Tarjeta de memoria (%1$s)</string>
+    <string name="export_fixed_folder_unavailable">La carpeta guardada no está disponible ahora — elige dónde exportar</string>
+    <string name="import_picker_progress_title">Importando a la caja fuerte</string>
+    <string name="import_canceled">Importación cancelada</string>
 </resources>

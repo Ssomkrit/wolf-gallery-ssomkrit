@@ -114,4 +114,19 @@
     <string name="about_email_copied">تم نسخ البريد الإلكتروني</string>
     <string name="about_source_header">الكود المصدري</string>
     <string name="about_link_copied">تم نسخ الرابط</string>
+    <string name="settings_cat_transfer_title">الاستيراد والتصدير والنسخ الاحتياطي</string>
+    <string name="settings_cat_transfer_subtitle">أين تُحفظ الملفات المصدَّرة</string>
+    <string name="settings_transfer_export_header">وجهة التصدير</string>
+    <string name="settings_export_ask_title">السؤال في كل مرة</string>
+    <string name="settings_export_ask_desc">يفتح اختيار المجلد عند كل عملية تصدير. المجلد أدناه يبقى محفوظًا لكنه لا يُستخدم.</string>
+    <string name="settings_export_fixed_title">استخدام مجلد واحد دائمًا</string>
+    <string name="settings_export_fixed_desc">يذهب التصدير مباشرة إلى المجلد أدناه دون سؤال.</string>
+    <string name="settings_export_folder_label">مجلد التصدير</string>
+    <string name="settings_export_browse">استعراض</string>
+    <string name="settings_export_folder_note">يحتفظ التطبيق بصلاحية الكتابة في هذا المجلد وحده، ولا يمكنه قراءة ما فيه مسبقًا. يُحفظ المسار حتى تغيّره من هنا — إخراج بطاقة الذاكرة وإعادتها لا يمسحه.</string>
+    <string name="settings_transfer_coming_soon">قريبًا</string>
+    <string name="settings_transfer_import_title">الاستيراد</string>
+    <string name="settings_transfer_import_desc">ستظهر هنا إعدادات الاستيراد. إضافة الملفات تعمل بالفعل من المعرض.</string>
+    <string name="settings_transfer_backup_title">النسخ الاحتياطي</string>
+    <string name="settings_transfer_backup_desc">نسخة مشفّرة قابلة للنقل تُفتح على جهاز آخر بكلمة المرور الخاصة بك.</string>
 </resources>

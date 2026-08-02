@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -196,10 +197,15 @@ fun EntryDestinationPickerScreen(
                 )
             }
         } else {
-            LazyVerticalGrid(
+            val destGridState = rememberLazyGridState()
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+            ) {
+            LazyVerticalGrid(
+                state = destGridState,
+                modifier = Modifier.fillMaxSize(),
                 columns = GridCells.Fixed(columns),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -227,6 +233,12 @@ fun EntryDestinationPickerScreen(
                         onClick = { onPick(summary.meta.uuid) }
                     )
                 }
+            }
+            ScrollToTopButton(
+                state = destGridState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                appearAfterIndex = columns * 4 - 1
+            )
             }
         }
     }
@@ -266,13 +278,13 @@ private fun DestinationAlbumTile(
     val context = LocalContext.current
     val customCoverUuid = summary.meta.coverEntryUuid
     val cacheKey = customCoverUuid ?: summary.firstEntry?.uuid
-    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt) {
+    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
         mutableStateOf<Bitmap?>(null)
     }
     val firstEntry = summary.firstEntry
     val isEmpty = customCoverUuid == null && firstEntry == null
     val emptyColors = emptyCoverColors()
-    LaunchedEffect(cacheKey, summary.meta.modifiedAt) {
+    LaunchedEffect(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
         if (customCoverUuid == null && firstEntry == null) return@LaunchedEffect
         coverBitmap = withContext(Dispatchers.IO) {
             val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
@@ -451,11 +463,11 @@ private fun DestinationMosaicQuadrant(
     val context = LocalContext.current
     val customCoverUuid = album?.meta?.coverEntryUuid
     val cacheKey = customCoverUuid ?: album?.firstEntry?.uuid
-    var bitmap by remember(cacheKey, album?.meta?.modifiedAt) {
+    var bitmap by remember(cacheKey, album?.meta?.modifiedAt, album?.meta?.coverRevision) {
         mutableStateOf<Bitmap?>(null)
     }
     if (album != null) {
-        LaunchedEffect(cacheKey, album.meta.modifiedAt) {
+        LaunchedEffect(cacheKey, album.meta.modifiedAt, album.meta.coverRevision) {
             if (customCoverUuid == null && album.firstEntry == null) return@LaunchedEffect
             bitmap = withContext(Dispatchers.IO) {
                 val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)

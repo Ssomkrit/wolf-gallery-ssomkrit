@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -73,6 +74,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
@@ -124,6 +126,11 @@ fun SettingsScreen(
     trashEnabled: Boolean,
     onTrashEnabledChange: (Boolean) -> Unit,
 
+    exportToFixedFolder: Boolean,
+    onExportToFixedFolderChange: (Boolean) -> Unit,
+    exportFolderPath: String,
+    onBrowseExportFolder: () -> Unit,
+
     loggingEnabled: Boolean,
     onLoggingChange: (Boolean) -> Unit,
     testsAndLogsContent: @Composable () -> Unit,
@@ -158,6 +165,7 @@ fun SettingsScreen(
         SettingsCategory.LANGUAGE -> stringResource(R.string.settings_cat_language_title)
         SettingsCategory.APP_ICON -> stringResource(R.string.settings_cat_app_icon_title)
         SettingsCategory.TRASH -> stringResource(R.string.settings_cat_trash_title)
+        SettingsCategory.TRANSFER -> stringResource(R.string.settings_cat_transfer_title)
         SettingsCategory.SUPPORT -> stringResource(R.string.settings_cat_support_title)
         SettingsCategory.TESTS_AND_LOGS -> stringResource(R.string.settings_cat_tests_logs_title)
         SettingsCategory.ABOUT -> stringResource(R.string.settings_cat_about_title)
@@ -174,9 +182,9 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .height(52.dp)
-                        .padding(start = 4.dp, end = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .heightIn(min = 52.dp)
+                        .padding(start = 4.dp, end = 12.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.Top
                 ) {
                     IconButton(onClick = {
                         if (current != SettingsCategory.HOME) {
@@ -194,7 +202,7 @@ fun SettingsScreen(
                         text = title,
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(start = 4.dp)
+                        modifier = Modifier.padding(start = 4.dp, top = 12.dp)
                     )
                 }
             }
@@ -242,6 +250,13 @@ fun SettingsScreen(
                 SettingsCategory.TRASH -> TrashCategory(
                     trashEnabled = trashEnabled,
                     onTrashEnabledChange = onTrashEnabledChange,
+                    modifier = Modifier.padding(innerPadding)
+                )
+                SettingsCategory.TRANSFER -> TransferCategory(
+                    exportToFixedFolder = exportToFixedFolder,
+                    onExportToFixedFolderChange = onExportToFixedFolderChange,
+                    exportFolderPath = exportFolderPath,
+                    onBrowseExportFolder = onBrowseExportFolder,
                     modifier = Modifier.padding(innerPadding)
                 )
                 SettingsCategory.SUPPORT -> SupportCategory(
@@ -387,6 +402,12 @@ private fun SettingsHome(
                     title = stringResource(R.string.settings_cat_trash_title),
                     subtitle = stringResource(R.string.settings_cat_trash_subtitle),
                     onClick = { onNavigate(SettingsCategory.TRASH) }
+                )
+                HorizontalDivider()
+                CategoryRow(
+                    title = stringResource(R.string.settings_cat_transfer_title),
+                    subtitle = stringResource(R.string.settings_cat_transfer_subtitle),
+                    onClick = { onNavigate(SettingsCategory.TRANSFER) }
                 )
                 HorizontalDivider()
                 CategoryRow(
@@ -903,6 +924,132 @@ private fun TrashCategory(
             selected = !trashEnabled,
             onSelect = { onTrashEnabledChange(false) }
         )
+    }
+}
+
+@Composable
+private fun TransferCategory(
+    exportToFixedFolder: Boolean,
+    onExportToFixedFolderChange: (Boolean) -> Unit,
+    exportFolderPath: String,
+    onBrowseExportFolder: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    SettingsScrollColumn(modifier = modifier) {
+        SectionHeader(stringResource(R.string.settings_transfer_export_header))
+        Spacer(Modifier.height(4.dp))
+        RadioOptionRow(
+            title = stringResource(R.string.settings_export_ask_title),
+            subtitle = stringResource(R.string.settings_export_ask_desc),
+            selected = !exportToFixedFolder,
+            onSelect = { onExportToFixedFolderChange(false) }
+        )
+        RadioOptionRow(
+            title = stringResource(R.string.settings_export_fixed_title),
+            subtitle = stringResource(R.string.settings_export_fixed_desc),
+            selected = exportToFixedFolder,
+            onSelect = { onExportToFixedFolderChange(true) }
+        )
+        Spacer(Modifier.height(16.dp))
+        ExportFolderRow(
+            path = exportFolderPath,
+            enabled = exportToFixedFolder,
+            onBrowse = onBrowseExportFolder
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.settings_export_folder_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(24.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(12.dp))
+        ComingSoonRow(
+            title = stringResource(R.string.settings_transfer_import_title),
+            subtitle = stringResource(R.string.settings_transfer_import_desc)
+        )
+        Spacer(Modifier.height(4.dp))
+        ComingSoonRow(
+            title = stringResource(R.string.settings_transfer_backup_title),
+            subtitle = stringResource(R.string.settings_transfer_backup_desc)
+        )
+    }
+}
+
+@Composable
+private fun ComingSoonRow(title: String, subtitle: String) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = muted
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = muted
+            )
+        }
+        Text(
+            text = stringResource(R.string.settings_transfer_coming_soon),
+            style = MaterialTheme.typography.labelLarge,
+            color = muted
+        )
+    }
+}
+
+@Composable
+private fun ExportFolderRow(
+    path: String,
+    enabled: Boolean,
+    onBrowse: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val pathColor = if (enabled) colors.onSurface else colors.onSurfaceVariant.copy(alpha = 0.45f)
+    val labelColor =
+        if (enabled) colors.onSurfaceVariant else colors.onSurfaceVariant.copy(alpha = 0.45f)
+    val borderColor = if (enabled) colors.outline else colors.outline.copy(alpha = 0.35f)
+
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.settings_export_folder_label),
+            style = MaterialTheme.typography.labelLarge,
+            color = labelColor,
+            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 12.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = path,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = pathColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            TextButton(onClick = onBrowse, enabled = enabled) {
+                Text(stringResource(R.string.settings_export_browse))
+            }
+        }
     }
 }
 

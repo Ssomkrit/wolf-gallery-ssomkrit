@@ -9,7 +9,6 @@ import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,20 +35,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
+import android.graphics.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -62,14 +55,13 @@ import dev.encgallery.storage.EncryptedFileBlob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
-import kotlin.math.max
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WallpaperCropScreen(
     entry: VaultEntry,
     target: WallpaperTarget,
-    onSave: (Bitmap) -> Unit,
+    onSave: (Bitmap, Rect) -> Unit,
     onCancel: () -> Unit
 ) {
     BackHandler { onCancel() }
@@ -211,7 +203,7 @@ private fun WallpaperCropEditor(
     entryUuid: String,
     bitmap: Bitmap,
     aspect: Float,
-    onSave: (Bitmap) -> Unit,
+    onSave: (Bitmap, Rect) -> Unit,
     onCancel: () -> Unit
 ) {
     val imgW = bitmap.width.toFloat()
@@ -227,31 +219,36 @@ private fun WallpaperCropEditor(
 
     val seedFromSession = entryUuid == GallerySession.lastWallpaperCropFrameUuid &&
         GallerySession.lastWallpaperCropHPx > 0f
-    var cropHPx by remember(bitmap, aspect) {
-        mutableFloatStateOf(
-            if (seedFromSession) GallerySession.lastWallpaperCropHPx
-                .coerceAtMost(maxCropH)
-            else initialCropH
-        )
-    }
-    var cropCenterX by remember(bitmap) {
-        mutableFloatStateOf(
-            if (seedFromSession) GallerySession.lastWallpaperCropCenterX
-            else imgW / 2f
-        )
-    }
-    var cropCenterY by remember(bitmap) {
-        mutableFloatStateOf(
-            if (seedFromSession) GallerySession.lastWallpaperCropCenterY
-            else imgH / 2f
+
+    val frame = remember(bitmap, aspect) {
+        CropFrameState(
+            imgW = imgW,
+            imgH = imgH,
+            aspect = aspect,
+            initialCropH = if (seedFromSession) {
+                GallerySession.lastWallpaperCropHPx.coerceAtMost(maxCropH)
+            } else {
+                initialCropH
+            },
+            initialCenterX = if (seedFromSession) {
+                GallerySession.lastWallpaperCropCenterX
+            } else {
+                imgW / 2f
+            },
+            initialCenterY = if (seedFromSession) {
+                GallerySession.lastWallpaperCropCenterY
+            } else {
+                imgH / 2f
+            },
+            minEdgePx = MIN_CROP_PX
         )
     }
 
-    LaunchedEffect(entryUuid, cropHPx, cropCenterX, cropCenterY) {
+    LaunchedEffect(entryUuid, frame.cropH, frame.centerX, frame.centerY) {
         GallerySession.lastWallpaperCropFrameUuid = entryUuid
-        GallerySession.lastWallpaperCropHPx = cropHPx
-        GallerySession.lastWallpaperCropCenterX = cropCenterX
-        GallerySession.lastWallpaperCropCenterY = cropCenterY
+        GallerySession.lastWallpaperCropHPx = frame.cropH
+        GallerySession.lastWallpaperCropCenterX = frame.centerX
+        GallerySession.lastWallpaperCropCenterY = frame.centerY
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -279,20 +276,11 @@ private fun WallpaperCropEditor(
                         width = with(density) { displayedW.toDp() },
                         height = with(density) { displayedH.toDp() }
                     )
-                    .pointerInput(bitmap, aspect) {
-                        detectTransformGestures { _, panScreen, zoom, _ ->
-                            cropHPx = (cropHPx * zoom).coerceIn(
-                                max(MIN_CROP_PX, MIN_CROP_PX / aspect),
-                                maxCropH
-                            )
-                            cropCenterX += panScreen.x / displayScale
-                            cropCenterY += panScreen.y / displayScale
-                            val halfW = (cropHPx * aspect) / 2f
-                            val halfH = cropHPx / 2f
-                            cropCenterX = cropCenterX.coerceIn(halfW, imgW - halfW)
-                            cropCenterY = cropCenterY.coerceIn(halfH, imgH - halfH)
-                        }
-                    }
+                    .cropFrameGestures(
+                        state = frame,
+                        displayScale = displayScale,
+                        handleSlopPx = with(density) { CROP_HANDLE_SLOP_DP.dp.toPx() }
+                    )
             ) {
                 Image(
                     bitmap = bitmap.asImageBitmap(),
@@ -300,11 +288,8 @@ private fun WallpaperCropEditor(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize()
                 )
-                WallpaperCropOverlay(
-                    cropCenterX = cropCenterX,
-                    cropCenterY = cropCenterY,
-                    cropWPx = cropHPx * aspect,
-                    cropHPx = cropHPx,
+                CropFrameOverlay(
+                    state = frame,
                     displayScale = displayScale,
                     displayedW = displayedW,
                     displayedH = displayedH
@@ -329,17 +314,15 @@ private fun WallpaperCropEditor(
             Spacer(Modifier.size(8.dp))
             TextButton(
                 onClick = {
-                    val cropW = cropHPx * aspect
-                    val left = (cropCenterX - cropW / 2f).toInt().coerceAtLeast(0)
-                    val top = (cropCenterY - cropHPx / 2f).toInt().coerceAtLeast(0)
-                    val width = cropW.toInt()
+                    val left = frame.left.toInt().coerceAtLeast(0)
+                    val top = frame.top.toInt().coerceAtLeast(0)
+                    val width = frame.cropW.toInt()
                         .coerceAtLeast(1)
                         .coerceAtMost(bitmap.width - left)
-                    val height = cropHPx.toInt()
+                    val height = frame.cropH.toInt()
                         .coerceAtLeast(1)
                         .coerceAtMost(bitmap.height - top)
-                    val cropped = Bitmap.createBitmap(bitmap, left, top, width, height)
-                    onSave(cropped)
+                    onSave(bitmap, Rect(left, top, left + width, top + height))
                 }
             ) {
                 Text(
@@ -350,93 +333,6 @@ private fun WallpaperCropEditor(
             }
         }
     }
-}
-
-@Composable
-private fun WallpaperCropOverlay(
-    cropCenterX: Float,
-    cropCenterY: Float,
-    cropWPx: Float,
-    cropHPx: Float,
-    displayScale: Float,
-    displayedW: Float,
-    displayedH: Float
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .drawWithContent {
-                drawContent()
-                val cropDispW = cropWPx * displayScale
-                val cropDispH = cropHPx * displayScale
-                val cropDispCx = cropCenterX * displayScale
-                val cropDispCy = cropCenterY * displayScale
-                val cropLeft = cropDispCx - cropDispW / 2f
-                val cropTop = cropDispCy - cropDispH / 2f
-                val cropRect = Rect(
-                    left = cropLeft,
-                    top = cropTop,
-                    right = cropLeft + cropDispW,
-                    bottom = cropTop + cropDispH
-                )
-
-                val scrim = Color.Black.copy(alpha = 0.55f)
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(0f, 0f),
-                    size = Size(displayedW, max(0f, cropTop))
-                )
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(0f, cropRect.bottom),
-                    size = Size(displayedW, max(0f, displayedH - cropRect.bottom))
-                )
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(0f, cropTop),
-                    size = Size(max(0f, cropLeft), cropRect.height)
-                )
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(cropRect.right, cropTop),
-                    size = Size(max(0f, displayedW - cropRect.right), cropRect.height)
-                )
-
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset(cropLeft, cropTop),
-                    size = Size(cropDispW, cropDispH),
-                    style = Stroke(width = 4f)
-                )
-                val thirdW = cropDispW / 3f
-                val thirdH = cropDispH / 3f
-                val gridColor = Color.White.copy(alpha = 0.4f)
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft + thirdW, cropTop),
-                    end = Offset(cropLeft + thirdW, cropTop + cropDispH),
-                    strokeWidth = 1f
-                )
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft + 2f * thirdW, cropTop),
-                    end = Offset(cropLeft + 2f * thirdW, cropTop + cropDispH),
-                    strokeWidth = 1f
-                )
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft, cropTop + thirdH),
-                    end = Offset(cropLeft + cropDispW, cropTop + thirdH),
-                    strokeWidth = 1f
-                )
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft, cropTop + 2f * thirdH),
-                    end = Offset(cropLeft + cropDispW, cropTop + 2f * thirdH),
-                    strokeWidth = 1f
-                )
-            }
-    )
 }
 
 private fun readPhysicalScreenSize(context: Context): Pair<Int, Int> {

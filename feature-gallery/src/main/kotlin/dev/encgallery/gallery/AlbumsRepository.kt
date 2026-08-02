@@ -84,7 +84,7 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
 
     fun rename(context: Context, albumUuid: String, newName: String): AlbumMeta? {
         val current = getAlbum(context, albumUuid) ?: return null
-        val updated = current.copy(name = newName, modifiedAt = System.currentTimeMillis())
+        val updated = current.copy(name = newName)
         val metaFile = File(VaultPaths.albumDir(context, albumUuid), VaultPaths.ALBUM_META_FILE)
         saveMeta(metaFile, updated)
         EncLog.i(TAG, "renamed album $albumUuid (new-name-len=${newName.length})")
@@ -119,7 +119,7 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
         val updated = current.copy(
             coverEntryUuid = coverEntryUuid,
             coverCropRect = cropRect,
-            modifiedAt = System.currentTimeMillis()
+            coverRevision = current.coverRevision + 1
         )
         val metaFile = File(VaultPaths.albumDir(context, albumUuid), VaultPaths.ALBUM_META_FILE)
         saveMeta(metaFile, updated)
@@ -144,7 +144,7 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
 
         val coverThumbFile = VaultPaths.albumCoverThumbFile(context, albumUuid)
         try {
-            val thumbJpeg = renderCoverThumbnail(coverEntry, cropRect)
+            val thumbJpeg = renderCoverThumbnail(context, coverEntry, cropRect)
             blob.encrypt(ByteArrayInputStream(thumbJpeg), coverThumbFile)
         } catch (t: Throwable) {
             if (coverThumbFile.exists() && !coverThumbFile.delete()) {
@@ -170,7 +170,7 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
         val updated = current.copy(
             coverEntryUuid = null,
             coverCropRect = null,
-            modifiedAt = System.currentTimeMillis()
+            coverRevision = current.coverRevision + 1
         )
         val metaFile = File(VaultPaths.albumDir(context, albumUuid), VaultPaths.ALBUM_META_FILE)
         saveMeta(metaFile, updated)
@@ -179,9 +179,20 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
     }
 
     private fun renderCoverThumbnail(
+        context: Context,
         entry: VaultEntry,
         cropRect: NormalizedRect
     ): ByteArray {
+        if (looksLikeVideo(entry)) {
+            val frame = ThumbnailFactory.videoFrameFromBlob(
+                context.applicationContext, entry.blobFile, keystore
+            ) ?: error("no video frame available for cover")
+            return try {
+                cropFrameToJpeg(frame, cropRect)
+            } finally {
+                frame.recycle()
+            }
+        }
         val plain = blob.decryptToBytes(entry.blobFile)
         val source = ImageDecoder.createSource(ByteBuffer.wrap(plain))
         val cropped: Bitmap = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
@@ -215,6 +226,50 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
             out.toByteArray()
         } finally {
             cropped.recycle()
+        }
+    }
+
+    private fun looksLikeVideo(entry: VaultEntry): Boolean = try {
+        val name = EntriesRepository(keystore).getMeta(entry.blobFile)?.originalFilename
+        MimeSniffer.isLikelyVideo(name, entry.blobSizeBytes)
+    } catch (t: Throwable) {
+        EncLog.w(TAG, "cover type probe failed for ${entry.uuid}: ${t.javaClass.simpleName}")
+        false
+    }
+
+    private fun cropFrameToJpeg(frame: Bitmap, cropRect: NormalizedRect): ByteArray {
+        val srcW = frame.width
+        val srcH = frame.height
+        val cx = (cropRect.x * srcW).toInt().coerceIn(0, srcW - 1)
+        val cy = (cropRect.y * srcH).toInt().coerceIn(0, srcH - 1)
+        val cw = (cropRect.w * srcW).toInt().coerceIn(1, srcW - cx)
+        val ch = (cropRect.h * srcH).toInt().coerceIn(1, srcH - cy)
+
+        val cropped = Bitmap.createBitmap(frame, cx, cy, cw, ch)
+        val scaled = try {
+            val longest = maxOf(cropped.width, cropped.height)
+            if (longest <= TARGET_LONG_EDGE_PX) {
+                cropped
+            } else {
+                val s = TARGET_LONG_EDGE_PX.toFloat() / longest
+                Bitmap.createScaledBitmap(
+                    cropped,
+                    (cropped.width * s).toInt().coerceAtLeast(1),
+                    (cropped.height * s).toInt().coerceAtLeast(1),
+                    true
+                )
+            }
+        } catch (t: Throwable) {
+            cropped
+        }
+        return try {
+            val out = ByteArrayOutputStream(32 * 1024)
+            val ok = scaled.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+            check(ok) { "Bitmap.compress returned false" }
+            out.toByteArray()
+        } finally {
+            if (scaled !== cropped) scaled.recycle()
+            if (cropped !== frame) cropped.recycle()
         }
     }
 

@@ -55,7 +55,7 @@ class AlbumGroupsRepository(private val keystore: KeystoreAesGcm) {
 
     fun rename(context: Context, groupUuid: String, newName: String): AlbumGroupMeta? {
         val current = getGroup(context, groupUuid) ?: return null
-        val updated = current.copy(name = newName, modifiedAt = System.currentTimeMillis())
+        val updated = current.copy(name = newName)
         val metaFile = File(VaultPaths.groupDir(context, groupUuid), VaultPaths.GROUP_META_FILE)
         saveMeta(metaFile, updated)
         EncLog.i(TAG, "renamed group $groupUuid (new-name-len=${newName.length})")
@@ -109,7 +109,7 @@ class AlbumGroupsRepository(private val keystore: KeystoreAesGcm) {
         saveMeta(metaFile, updated)
         EncLog.i(
             TAG,
-            "removed ${albumUuids.size - newList.size + (current.albumUuids.size - newList.size)} album(s) from group $groupUuid"
+            "removed ${current.albumUuids.size - newList.size} album(s) from group $groupUuid"
         )
         return updated
     }

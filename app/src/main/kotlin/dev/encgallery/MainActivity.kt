@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -141,6 +142,9 @@ import dev.encgallery.gallery.ThumbnailLoader
 import dev.encgallery.gallery.MosaicAspectStore
 import dev.encgallery.gallery.ThumbnailMigration
 import dev.encgallery.gallery.TrashRepository
+import dev.encgallery.gallery.SelectionKind
+import dev.encgallery.gallery.selCountRes
+import dev.encgallery.gallery.selectionKindOf
 import dev.encgallery.gallery.VaultPaths
 import dev.encgallery.gallery.GalleryHost
 import dev.encgallery.gallery.GallerySession
@@ -156,7 +160,10 @@ import dev.encgallery.logging.EncLog
 import dev.encgallery.nativec.NativeCrypto
 import dev.encgallery.session.SessionState
 import dev.encgallery.session.wipeVault
+import dev.encgallery.gallery.ImportController
+import dev.encgallery.gallery.VaultMaintenance
 import dev.encgallery.settings.AppSettings
+import dev.encgallery.settings.ExportDestination
 import dev.encgallery.settings.LocaleHelper
 import dev.encgallery.storage.EncryptedFileBlob
 import dev.encgallery.ui.theme.EncGalleryTheme
@@ -171,7 +178,9 @@ import dev.encgallery.wizard.UnlockScreen
 import dev.encgallery.wizard.WizardHost
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import dev.encgallery.ui.theme.LocalTabRowColor
@@ -228,6 +237,29 @@ class MainActivity : ComponentActivity() {
                     val lastFailureAt by AppSettings.lastFailureAt
                     val activityCtx = LocalContext.current
 
+                    val importCanceledText = stringResource(R.string.import_canceled)
+                    LaunchedEffect(ImportController.completedBatches) {
+                        if (ImportController.consumeCancellation()) {
+                            Toast.makeText(activityCtx, importCanceledText, Toast.LENGTH_SHORT).show()
+                        }
+                        val summary = ImportController.consumeSummary()
+                        if (summary != null) {
+                            Toast.makeText(
+                                activityCtx,
+                                ImportController.summaryText(activityCtx, summary),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+
+                    val exportFolderPickLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.OpenDocumentTree()
+                    ) { treeUri: Uri? ->
+                        if (treeUri != null) {
+                            ExportDestination.store(activityCtx, treeUri)
+                        }
+                    }
+
                     var settingsOpen by remember {
                         mutableStateOf(GallerySession.lastSettingsOpen)
                     }
@@ -261,6 +293,7 @@ class MainActivity : ComponentActivity() {
                             withContext(Dispatchers.IO) {
                                 val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
                                 TrashRepository(keystore).purgeOlderThan(activityCtx.applicationContext)
+                                VaultMaintenance.sweepStaleTemps(activityCtx.applicationContext)
                             }
                         }
                     }
@@ -334,6 +367,7 @@ class MainActivity : ComponentActivity() {
 
                                                 var groupsOk = 0
                                                 var albumsOk = 0
+                                                var albumsViaGroup = 0
                                                 var entriesOk = 0
                                                 val groupsReq = toRestore.count { it is dev.encgallery.gallery.TrashGroup }
                                                 val albumsReq = toRestore.count { it is dev.encgallery.gallery.TrashAlbum }
@@ -343,13 +377,21 @@ class MainActivity : ComponentActivity() {
                                                     val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
                                                     val repo = TrashRepository(keystore)
 
+                                                    val coveredByGroups = mutableSetOf<String>()
                                                     toRestore.filterIsInstance<dev.encgallery.gallery.TrashGroup>()
                                                         .forEach {
-                                                            if (repo.restoreGroup(activityCtx.applicationContext, it) != null) groupsOk++
+                                                            if (repo.restoreGroup(activityCtx.applicationContext, it) != null) {
+                                                                groupsOk++
+                                                                coveredByGroups.addAll(it.meta.albumUuids)
+                                                            }
                                                         }
                                                     toRestore.filterIsInstance<dev.encgallery.gallery.TrashAlbum>()
                                                         .forEach {
-                                                            if (repo.restoreAlbum(activityCtx.applicationContext, it) != null) albumsOk++
+                                                            if (it.uuid in coveredByGroups) {
+                                                                albumsViaGroup++
+                                                            } else if (repo.restoreAlbum(activityCtx.applicationContext, it) != null) {
+                                                                albumsOk++
+                                                            }
                                                         }
                                                     toRestore.filterIsInstance<dev.encgallery.gallery.TrashEntry>()
                                                         .forEach {
@@ -360,7 +402,9 @@ class MainActivity : ComponentActivity() {
                                                 EncLog.i(
                                                     "MainActivity",
                                                     "restore batch: requested=${toRestore.size} " +
-                                                        "groups=$groupsOk/$groupsReq albums=$albumsOk/$albumsReq " +
+                                                        "groups=$groupsOk/$groupsReq " +
+                                                        "albums=$albumsOk/${albumsReq - albumsViaGroup} " +
+                                                        "(via group=$albumsViaGroup) " +
                                                         "entries=$entriesOk/$entriesReq took=${took}ms"
                                                 )
                                                 trashRefreshTick++
@@ -506,6 +550,12 @@ class MainActivity : ComponentActivity() {
                                 },
                                 trashEnabled = trashEnabledNow,
                                 onTrashEnabledChange = { AppSettings.setTrashEnabled(it) },
+                                exportToFixedFolder = AppSettings.exportToFixedFolder.value,
+                                onExportToFixedFolderChange = {
+                                    AppSettings.setExportToFixedFolder(it)
+                                },
+                                exportFolderPath = ExportDestination.label(activityCtx),
+                                onBrowseExportFolder = { exportFolderPickLauncher.launch(null) },
                                 loggingEnabled = loggingEnabled,
                                 onLoggingChange = { AppSettings.setLoggingEnabled(it) },
                                 testsAndLogsContent = { TestsAndLogsContent() },
@@ -685,6 +735,40 @@ private fun SkeletonContent(
     }
 
     var operationProgress by remember { mutableStateOf<OperationProgress?>(null) }
+
+    var copyJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var copyPaused by remember { mutableStateOf(false) }
+    val cancelCopy: () -> Unit = {
+        copyPaused = false
+        copyJob?.cancel()
+    }
+    val toggleCopyPause: () -> Unit = { copyPaused = !copyPaused }
+
+    LaunchedEffect(copyPaused) {
+        val shown = operationProgress
+        if (shown != null && shown.kind == OperationKind.COPY) {
+            operationProgress = shown.copy(paused = copyPaused)
+        }
+    }
+
+    var moveJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var movePaused by remember { mutableStateOf(false) }
+    val cancelMove: () -> Unit = {
+        movePaused = false
+        moveJob?.cancel()
+    }
+    val toggleMovePause: () -> Unit = { movePaused = !movePaused }
+
+    LaunchedEffect(movePaused) {
+        val shown = operationProgress
+        if (shown != null && shown.kind == OperationKind.MOVE) {
+            operationProgress = shown.copy(paused = movePaused)
+        }
+    }
+
+    var trashJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val cancelTrash: () -> Unit = { trashJob?.cancel() }
+
 
     var fileConflict by remember { mutableStateOf<FileConflictRequest?>(null) }
 
@@ -889,8 +973,10 @@ private fun SkeletonContent(
     val moveTitleTemplate = stringResource(R.string.op_progress_title_move)
     val copyTitleTemplate = stringResource(R.string.op_progress_title_copy)
     val trashTitleTemplate = stringResource(R.string.op_progress_title_trash)
+    val purgeTitleTemplate = stringResource(R.string.op_progress_title_delete_permanent)
     val importTitleTemplate = stringResource(R.string.import_folder_progress_title)
     val exportTitle = stringResource(R.string.export_progress_title)
+    val pickerImportTitle = stringResource(R.string.import_picker_progress_title)
 
     val clearGridSelection = {
         GallerySession.lastSelectedEntryUuids = emptySet()
@@ -910,30 +996,35 @@ private fun SkeletonContent(
                     .firstOrNull { it.meta.uuid == entry.albumUuid }
                     ?.meta?.name
             }
+            val routeToTrash = trashEnabled
+            val progressTitle = if (routeToTrash) trashTitleTemplate else purgeTitleTemplate
             operationProgress = OperationProgress(
                 kind = OperationKind.TRASH,
                 destAlbumName = "",
                 current = 0,
                 total = toTrash.size,
-                titleText = trashTitleTemplate
+                titleText = progressTitle,
+                onCancel = cancelTrash
             )
             entries = entries.filter { it.uuid !in uuids }
             GallerySession.lastEntries = entries
             clearGridSelection()
-            val routeToTrash = trashEnabled
-            scope.launch {
+            val landedInTrash = mutableListOf<String>()
+            trashJob = scope.launch {
 
                 try {
                     withContext(Dispatchers.IO) {
                         val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
                         val repo = TrashRepository(keystore)
                         toTrash.forEachIndexed { idx, entry ->
+                            ensureActive()
                             if (routeToTrash) {
-                                repo.moveToTrash(
+                                val ok = repo.moveToTrash(
                                     context.applicationContext,
                                     entry,
                                     originalAlbumNameHint = nameHintByUuid[entry.uuid]
                                 )
+                                if (ok) landedInTrash.add(entry.uuid)
                             } else {
 
                                 deleteEntryOnDisk(entry)
@@ -943,10 +1034,30 @@ private fun SkeletonContent(
                                 destAlbumName = "",
                                 current = idx + 1,
                                 total = toTrash.size,
-                                titleText = trashTitleTemplate
+                                titleText = progressTitle,
+                                onCancel = cancelTrash
                             )
                         }
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    withContext(NonCancellable + Dispatchers.IO) {
+                        val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                        val repo = TrashRepository(keystore)
+                        val landed = landedInTrash.toSet()
+                        var restored = 0
+                        repo.listTrash(context.applicationContext)
+                            .filter { it.uuid in landed }
+                            .forEach { trashed ->
+                                if (repo.restore(context.applicationContext, trashed) != null) {
+                                    restored++
+                                }
+                            }
+                        EncLog.i(
+                            "MainActivity",
+                            "trash cancelled — restored $restored of ${landed.size} entr(ies)"
+                        )
+                    }
+                    throw e
                 } finally {
                     operationProgress = null
                     refreshTrigger++
@@ -992,18 +1103,23 @@ private fun SkeletonContent(
                 ?.meta?.name
                 ?: ""
             val initialTitle = String.format(moveTitleTemplate, destName)
+            val landedMoves = mutableListOf<String>()
+            val renamedOnMove = mutableMapOf<String, String>()
+            movePaused = false
             operationProgress = OperationProgress(
                 kind = OperationKind.MOVE,
                 destAlbumName = destName,
                 current = 0,
                 total = toMove.size,
-                titleText = initialTitle
+                titleText = initialTitle,
+                onPauseToggle = toggleMovePause,
+                onCancel = cancelMove
             )
 
             entries = entries.filter { it.uuid !in uuids }
             GallerySession.lastEntries = entries
             clearGridSelection()
-            scope.launch {
+            moveJob = scope.launch {
 
                 try {
                     val outcome = withContext(Dispatchers.IO) {
@@ -1021,8 +1137,16 @@ private fun SkeletonContent(
                                     destAlbumName = destName,
                                     current = done,
                                     total = total,
-                                    titleText = initialTitle
+                                    titleText = initialTitle,
+                                    paused = movePaused,
+                                    onPauseToggle = toggleMovePause,
+                                    onCancel = cancelMove
                                 )
+                                while (movePaused) delay(150)
+                            },
+                            onLanded = { landedMoves.add(it) },
+                            onRenamed = { uuid, previousName ->
+                                renamedOnMove[uuid] = previousName
                             }
                         )
 
@@ -1034,7 +1158,40 @@ private fun SkeletonContent(
                         moveResult
                     }
                     applyNameCacheChanges(outcome)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    withContext(NonCancellable + Dispatchers.IO) {
+                        val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                        val repo = EntriesRepository(keystore)
+                        val landed = landedMoves.toSet()
+                        val originByUuid = toMove.associate { it.uuid to it.albumUuid }
+                        val inDest = VaultIndex.listEntriesInAlbum(
+                            context.applicationContext, destAlbumUuid
+                        )
+                        var returned = 0
+                        inDest.filter { it.uuid in landed }.forEach { moved ->
+                            val origin = originByUuid[moved.uuid] ?: return@forEach
+                            if (EntryOps.moveEntry(context.applicationContext, moved, origin)) {
+                                returned++
+                                renamedOnMove[moved.uuid]?.let { previousName ->
+                                    val restoredBlob = java.io.File(
+                                        VaultPaths.albumDir(context.applicationContext, origin),
+                                        "${moved.uuid}${VaultPaths.BLOB_SUFFIX}"
+                                    )
+                                    repo.rename(restoredBlob, previousName)
+                                }
+                            }
+                        }
+                        EncLog.i(
+                            "MainActivity",
+                            "move cancelled — returned $returned of ${landed.size} entr(ies)"
+                        )
+                    }
+                    applyNameCacheChanges(
+                        EntryBatchOutcome(renamed = emptyMap(), removed = landedMoves.toSet())
+                    )
+                    throw e
                 } finally {
+                    movePaused = false
                     operationProgress = null
                     refreshTrigger++
                 }
@@ -1050,15 +1207,19 @@ private fun SkeletonContent(
                 ?.meta?.name
                 ?: ""
             val initialTitle = String.format(copyTitleTemplate, destName)
+            val landedCopies = mutableListOf<String>()
+            copyPaused = false
             operationProgress = OperationProgress(
                 kind = OperationKind.COPY,
                 destAlbumName = destName,
                 current = 0,
                 total = toCopy.size,
-                titleText = initialTitle
+                titleText = initialTitle,
+                onPauseToggle = toggleCopyPause,
+                onCancel = cancelCopy
             )
             clearGridSelection()
-            scope.launch {
+            copyJob = scope.launch {
 
                 try {
                     val outcome = withContext(Dispatchers.IO) {
@@ -1076,16 +1237,40 @@ private fun SkeletonContent(
                                     destAlbumName = destName,
                                     current = done,
                                     total = total,
-                                    titleText = initialTitle
+                                    titleText = initialTitle,
+                                    paused = copyPaused,
+                                    onPauseToggle = toggleCopyPause,
+                                    onCancel = cancelCopy
                                 )
-                            }
+                                while (copyPaused) delay(150)
+                            },
+                            onLanded = { landedCopies.add(it) }
                         )
 
                         AlbumsRepository(keystore).touch(context.applicationContext, destAlbumUuid)
                         copyResult
                     }
                     applyNameCacheChanges(outcome)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    withContext(NonCancellable + Dispatchers.IO) {
+                        val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                        val repo = EntriesRepository(keystore)
+                        val inDest = VaultIndex.listEntriesInAlbum(
+                            context.applicationContext, destAlbumUuid
+                        )
+                        val undo = inDest.filter { it.uuid in landedCopies }
+                        undo.forEach { copy ->
+                            repo.deleteMeta(copy.blobFile)
+                            deleteEntryOnDisk(copy)
+                        }
+                        EncLog.i(
+                            "MainActivity",
+                            "copy cancelled — removed ${undo.size} of ${landedCopies.size} copied entr(ies)"
+                        )
+                    }
+                    throw e
                 } finally {
+                    copyPaused = false
                     operationProgress = null
                     refreshTrigger++
                 }
@@ -1433,10 +1618,156 @@ private fun SkeletonContent(
         }
     }
 
+    var mirroringPickerImport by remember { mutableStateOf(false) }
+    val pickerImporting = ImportController.importing
+    val pickerImportIndex = ImportController.currentIndex
+    val pickerImportTotal = ImportController.currentTotal
+    val pickerImportPaused = ImportController.paused
+    LaunchedEffect(pickerImporting, pickerImportIndex, pickerImportTotal, pickerImportPaused) {
+        if (pickerImporting && pickerImportTotal > 0) {
+            mirroringPickerImport = true
+            operationProgress = OperationProgress(
+                kind = OperationKind.IMPORT,
+                destAlbumName = "",
+                current = pickerImportIndex,
+                total = pickerImportTotal,
+                titleText = pickerImportTitle,
+                paused = pickerImportPaused,
+                onPauseToggle = { ImportController.togglePause() },
+                onCancel = { ImportController.cancel() }
+            )
+        } else if (mirroringPickerImport) {
+            mirroringPickerImport = false
+            operationProgress = null
+        }
+    }
+
+    var exportJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var exportPaused by remember { mutableStateOf(false) }
+    val cancelExport: () -> Unit = {
+        exportPaused = false
+        exportJob?.cancel()
+    }
+    val toggleExportPause: () -> Unit = { exportPaused = !exportPaused }
+
+    LaunchedEffect(exportPaused) {
+        val shown = operationProgress
+        if (shown != null && shown.kind == OperationKind.EXPORT) {
+            operationProgress = shown.copy(paused = exportPaused)
+        }
+    }
+
+    var folderImportJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var folderImportPaused by remember { mutableStateOf(false) }
+    val cancelFolderImport: () -> Unit = {
+        folderImportPaused = false
+        folderImportJob?.cancel()
+    }
+    val toggleFolderImportPause: () -> Unit = { folderImportPaused = !folderImportPaused }
+
+    LaunchedEffect(folderImportPaused) {
+        val shown = operationProgress
+        if (shown != null && shown.kind == OperationKind.IMPORT && shown.destAlbumName.isNotEmpty()) {
+            operationProgress = shown.copy(paused = folderImportPaused)
+        }
+    }
+
+    val folderImportProgress: (String, Int, Int, String) -> OperationProgress =
+        { bucketName, done, total, title ->
+            OperationProgress(
+                kind = OperationKind.IMPORT,
+                destAlbumName = bucketName,
+                current = done,
+                total = total,
+                titleText = title,
+                paused = folderImportPaused,
+                onPauseToggle = toggleFolderImportPause,
+                onCancel = cancelFolderImport
+            )
+        }
+
+    val exportProgress: (Int, Int) -> OperationProgress = { done, total ->
+        OperationProgress(
+            kind = OperationKind.EXPORT,
+            destAlbumName = "",
+            current = done,
+            total = total,
+            titleText = exportTitle,
+            paused = exportPaused,
+            onPauseToggle = toggleExportPause,
+            onCancel = cancelExport
+        )
+    }
+
     var pendingExportEntry by remember { mutableStateOf<VaultEntry?>(null) }
     var pendingExportEntries by remember { mutableStateOf<List<VaultEntry>>(emptyList()) }
 
     var pendingExportAlbums by remember { mutableStateOf<List<AlbumExportBundle>>(emptyList()) }
+
+    val runTreeExport: (List<VaultEntry>, Uri) -> Unit = { items, treeUri ->
+        exportPaused = false
+        exportJob = scope.launch {
+            operationProgress = exportProgress(0, items.size)
+            val (ok, total) = try {
+                EntryExport.exportToTree(
+                    context, items, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                ) { done, tot ->
+                    operationProgress = exportProgress(done, tot)
+                    while (exportPaused) delay(150)
+                }
+            } finally {
+                exportPaused = false
+                operationProgress = null
+            }
+            val msg = when {
+                ok == 0 -> context.getString(R.string.export_failed)
+                total == 1 -> context.getString(R.string.export_done_single)
+                else -> context.getString(R.string.export_done_multi, ok, total)
+            }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val runAlbumsExport: (List<AlbumExportBundle>, Uri) -> Unit = { bundles, treeUri ->
+        exportPaused = false
+        exportJob = scope.launch {
+            val grandTotal = bundles.sumOf { it.entries.size }
+            operationProgress = exportProgress(0, grandTotal)
+            val (ok, total) = try {
+                EntryExport.exportAlbumsToTree(
+                    context, bundles, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                ) { done, tot ->
+                    operationProgress = exportProgress(done, tot)
+                    while (exportPaused) delay(150)
+                }
+            } finally {
+                exportPaused = false
+                operationProgress = null
+            }
+            val msg = if (ok == 0) {
+                context.getString(R.string.export_failed)
+            } else {
+                context.getString(R.string.export_done_multi, ok, total)
+            }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val fixedExportFolder: () -> Uri? = {
+        if (AppSettings.exportToFixedFolder.value) {
+            val stored = ExportDestination.writableTreeUri(context)
+            if (stored == null) {
+                Toast.makeText(
+                    context,
+                    R.string.export_fixed_folder_unavailable,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            stored
+        } else {
+            null
+        }
+    }
 
     val exportSingleLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("*/*")
@@ -1444,19 +1775,18 @@ private fun SkeletonContent(
         val entry = pendingExportEntry
         pendingExportEntry = null
         if (uri != null && entry != null) {
-            scope.launch {
-                operationProgress = OperationProgress(
-                    OperationKind.EXPORT, "", 0, 1, exportTitle
-                )
+            exportPaused = false
+            exportJob = scope.launch {
+                operationProgress = exportProgress(0, 1)
                 val ok = try {
                     EntryExport.exportToUri(
                         context, entry, uri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
                     ) { done, tot ->
-                        operationProgress = OperationProgress(
-                            OperationKind.EXPORT, "", done, tot, exportTitle
-                        )
+                        operationProgress = exportProgress(done, tot)
+                        while (exportPaused) delay(150)
                     }
                 } finally {
+                    exportPaused = false
                     operationProgress = null
                 }
                 Toast.makeText(
@@ -1474,28 +1804,7 @@ private fun SkeletonContent(
         val items = pendingExportEntries
         pendingExportEntries = emptyList()
         if (treeUri != null && items.isNotEmpty()) {
-            scope.launch {
-                operationProgress = OperationProgress(
-                    OperationKind.EXPORT, "", 0, items.size, exportTitle
-                )
-                val (ok, total) = try {
-                    EntryExport.exportToTree(
-                        context, items, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
-                    ) { done, tot ->
-                        operationProgress = OperationProgress(
-                            OperationKind.EXPORT, "", done, tot, exportTitle
-                        )
-                    }
-                } finally {
-                    operationProgress = null
-                }
-                val msg = if (ok == 0) {
-                    context.getString(R.string.export_failed)
-                } else {
-                    context.getString(R.string.export_done_multi, ok, total)
-                }
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-            }
+            runTreeExport(items, treeUri)
         }
     }
 
@@ -1505,29 +1814,7 @@ private fun SkeletonContent(
         val bundles = pendingExportAlbums
         pendingExportAlbums = emptyList()
         if (treeUri != null && bundles.isNotEmpty()) {
-            scope.launch {
-                val grandTotal = bundles.sumOf { it.entries.size }
-                operationProgress = OperationProgress(
-                    OperationKind.EXPORT, "", 0, grandTotal, exportTitle
-                )
-                val (ok, total) = try {
-                    EntryExport.exportAlbumsToTree(
-                        context, bundles, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
-                    ) { done, tot ->
-                        operationProgress = OperationProgress(
-                            OperationKind.EXPORT, "", done, tot, exportTitle
-                        )
-                    }
-                } finally {
-                    operationProgress = null
-                }
-                val msg = if (ok == 0) {
-                    context.getString(R.string.export_failed)
-                } else {
-                    context.getString(R.string.export_done_multi, ok, total)
-                }
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-            }
+            runAlbumsExport(bundles, treeUri)
         }
     }
 
@@ -1570,23 +1857,24 @@ private fun SkeletonContent(
 
     val handleImportBuckets: (List<DeviceBucket>) -> Unit = { chosen ->
         if (chosen.isNotEmpty()) {
-            scope.launch {
+            folderImportPaused = false
+            folderImportJob = scope.launch {
                 val appCtx = context.applicationContext
                 val grandTotal = chosen.sumOf { it.count }
                 var processed = 0
                 var okCount = 0
                 val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                val createdAlbums = mutableListOf<String>()
                 try {
                     for (bucket in chosen) {
                         val title = String.format(importTitleTemplate, bucket.name)
-                        operationProgress = OperationProgress(
-                            OperationKind.IMPORT, bucket.name, processed, grandTotal, title
-                        )
+                        operationProgress = folderImportProgress(bucket.name, processed, grandTotal, title)
                         val uris = DeviceMediaBuckets.bucketItemUris(appCtx, bucket.id)
                         if (uris.isEmpty()) continue
                         val albumUuid = withContext(Dispatchers.IO) {
                             AlbumsRepository(keystore).create(appCtx, bucket.name).uuid
                         }
+                        createdAlbums.add(albumUuid)
                         withContext(Dispatchers.IO) {
                             PhotoImporter(keystore).importAll(
                                 context = appCtx,
@@ -1603,14 +1891,29 @@ private fun SkeletonContent(
                                 if (prog is PhotoImporter.Progress.FileSucceeded ||
                                     prog is PhotoImporter.Progress.FileFailed
                                 ) {
-                                    operationProgress = OperationProgress(
-                                        OperationKind.IMPORT, bucket.name, processed, grandTotal, title
-                                    )
+                                    operationProgress =
+                                        folderImportProgress(bucket.name, processed, grandTotal, title)
+                                }
+                                if (prog is PhotoImporter.Progress.FileStarted) {
+                                    while (folderImportPaused) delay(150)
                                 }
                             }
                         }
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    withContext(NonCancellable + Dispatchers.IO) {
+                        val repo = AlbumsRepository(keystore)
+                        createdAlbums.forEach { uuid ->
+                            repo.deletePermanently(appCtx, uuid)
+                        }
+                    }
+                    EncLog.i(
+                        "MainActivity",
+                        "folder import cancelled — removed ${createdAlbums.size} album(s) created by this batch"
+                    )
+                    throw e
                 } finally {
+                    folderImportPaused = false
                     operationProgress = null
                     refreshTrigger++
                 }
@@ -1624,21 +1927,30 @@ private fun SkeletonContent(
     }
 
     val handleExportSingle: (VaultEntry) -> Unit = { entry ->
-
-        scope.launch {
-            val name = EntryExport.suggestedName(
-                context, entry, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
-            )
-            pendingExportEntry = entry
-            exportSingleLauncher.launch(name)
+        val folder = fixedExportFolder()
+        if (folder != null) {
+            runTreeExport(listOf(entry), folder)
+        } else {
+            scope.launch {
+                val name = EntryExport.suggestedName(
+                    context, entry, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                )
+                pendingExportEntry = entry
+                exportSingleLauncher.launch(name)
+            }
         }
     }
     val handleExportSelection: (Set<String>) -> Unit = { uuids ->
         val items = entries.filter { it.uuid in uuids }
         if (items.isNotEmpty()) {
-            pendingExportEntries = items
+            val folder = fixedExportFolder()
+            if (folder != null) {
+                runTreeExport(items, folder)
+            } else {
+                pendingExportEntries = items
 
-            exportTreeLauncher.launch(null)
+                exportTreeLauncher.launch(null)
+            }
         }
     }
 
@@ -1656,8 +1968,13 @@ private fun SkeletonContent(
                     }
                 }
                 if (bundles.isNotEmpty()) {
-                    pendingExportAlbums = bundles
-                    exportAlbumsTreeLauncher.launch(null)
+                    val folder = fixedExportFolder()
+                    if (folder != null) {
+                        runAlbumsExport(bundles, folder)
+                    } else {
+                        pendingExportAlbums = bundles
+                        exportAlbumsTreeLauncher.launch(null)
+                    }
                 }
             }
         }
@@ -2020,10 +2337,16 @@ private fun SkeletonContent(
             val cancelActiveSelection = {
                 if (isEntryContextNow) clearGridSelection() else clearAlbumSelection()
             }
+            val activeSelectionKind = if (isEntryContextNow) {
+                selectionKindOf(files = activeSelectionCount, albums = 0, groups = 0)
+            } else {
+                selectionKindOf(files = 0, albums = activeSelectionCount, groups = 0)
+            }
             if (!tabBarBottom) {
                 if (anySelectionMode) {
                     HostSelectionTopBar(
                         count = activeSelectionCount,
+                        kind = activeSelectionKind,
                         onCancel = cancelActiveSelection
                     )
                 } else {
@@ -2184,6 +2507,7 @@ private fun SkeletonContent(
                 if (anySelectionMode) {
                     HostSelectionTopBar(
                         count = activeSelectionCount,
+                        kind = activeSelectionKind,
                         onCancel = cancelActiveSelection
                     )
                 } else {
@@ -2406,14 +2730,17 @@ private fun SkeletonContent(
                 WallpaperCropScreen(
                     entry = wpEntry,
                     target = wpTarget,
-                    onSave = { croppedBitmap ->
+                    onSave = { sourceBitmap, cropRect ->
                         wallpaperCropEntryUuid = null
                         wallpaperCropTarget = null
                         scope.launch {
                             val ok = withContext(Dispatchers.IO) {
-                                WallpaperOps.setBitmap(
+                                WallpaperOps.setCroppedFromEntry(
                                     context = context.applicationContext,
-                                    bitmap = croppedBitmap,
+                                    entry = wpEntry,
+                                    editorBitmap = sourceBitmap,
+                                    cropInEditor = cropRect,
+                                    keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS),
                                     target = wpTarget
                                 )
                             }
@@ -3382,7 +3709,7 @@ private fun runAlbumsSelfTest(context: Context): Boolean {
         val newName = "Альбом 🦊 переименован"
         val renamed = repo.rename(ctx, createdMeta.uuid, newName)
         val renameOk = renamed != null && renamed.name == newName &&
-                renamed.modifiedAt >= createdMeta.modifiedAt
+                renamed.modifiedAt == createdMeta.modifiedAt
         EncLog.i(
             tag,
             "(3) rename round-trip: $renameOk (new-name-len=${renamed?.name?.length})"
@@ -3398,7 +3725,9 @@ private fun runAlbumsSelfTest(context: Context): Boolean {
         val withCover = repo.setCover(ctx, createdMeta.uuid, fakeEntryUuid, fakeCrop)
         val coverOk = withCover != null &&
                 withCover.coverEntryUuid == fakeEntryUuid &&
-                withCover.coverCropRect == fakeCrop
+                withCover.coverCropRect == fakeCrop &&
+                withCover.coverRevision == createdMeta.coverRevision + 1 &&
+                withCover.modifiedAt == createdMeta.modifiedAt
         EncLog.i(tag, "(4) cover round-trip: $coverOk")
         if (!coverOk) {
             repo.deletePermanently(ctx, createdMeta.uuid)
@@ -3410,7 +3739,8 @@ private fun runAlbumsSelfTest(context: Context): Boolean {
         val rehydrateOk = rehydrated != null &&
                 rehydrated.name == newName &&
                 rehydrated.coverEntryUuid == fakeEntryUuid &&
-                rehydrated.coverCropRect == fakeCrop
+                rehydrated.coverCropRect == fakeCrop &&
+                rehydrated.coverRevision == withCover.coverRevision
         EncLog.i(tag, "(5) rehydrate-from-disk round-trip: $rehydrateOk")
         if (!rehydrateOk) {
             repo.deletePermanently(ctx, createdMeta.uuid)
@@ -3650,6 +3980,7 @@ private fun SortOptionRow(label: String, selected: Boolean, onClick: () -> Unit)
 @Composable
 private fun HostSelectionTopBar(
     count: Int,
+    kind: SelectionKind,
     onCancel: () -> Unit
 ) {
     androidx.compose.material3.Surface(
@@ -3671,7 +4002,7 @@ private fun HostSelectionTopBar(
                 )
             }
             Text(
-                text = stringResource(R.string.selection_count, count),
+                text = pluralStringResource(selCountRes(kind), count, count),
                 style = MaterialTheme.typography.titleMedium
             )
         }

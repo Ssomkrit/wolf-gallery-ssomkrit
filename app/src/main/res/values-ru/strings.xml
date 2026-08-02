@@ -36,7 +36,6 @@
     <string name="sort_option_name_za">По имени (Я—А)</string>
     <string name="sort_dialog_btn_close">Закрыть</string>
 
-    <string name="selection_count">Выбрано: %1$d</string>
     <string name="selection_cancel">Отменить выбор</string>
 
     <string name="album_default_imported_name">Загрузки</string>
@@ -148,6 +147,7 @@
     <string name="op_progress_title_move">Перенос медиа в \"%1$s\"</string>
     <string name="op_progress_title_copy">Копирование медиа в \"%1$s\"</string>
     <string name="op_progress_title_trash">Перемещение в Корзину</string>
+    <string name="op_progress_title_delete_permanent">Безвозвратное удаление</string>
 
     <string name="file_rename_taken">Файл с таким именем уже есть</string>
     <string name="entry_dup_in_album">Файл с таким именем уже есть в этом альбоме</string>
@@ -177,4 +177,10 @@
     <string name="share_target_done">Добавлено в сейф: %1$d</string>
     <string name="share_target_partial">Добавлено: %1$d. Не удалось: %2$d.</string>
     <string name="share_target_close">Закрыть</string>
+    <string name="export_folder_none">Не выбрана</string>
+    <string name="export_folder_internal">Внутренняя память</string>
+    <string name="export_folder_removable">Карта памяти (%1$s)</string>
+    <string name="export_fixed_folder_unavailable">Сохранённая папка сейчас недоступна — выберите, куда экспортировать</string>
+    <string name="import_picker_progress_title">Импорт в сейф</string>
+    <string name="import_canceled">Импорт отменён</string>
 </resources>

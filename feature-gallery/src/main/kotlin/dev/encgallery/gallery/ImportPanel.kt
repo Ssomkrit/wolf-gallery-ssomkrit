@@ -19,13 +19,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.widget.Toast
 import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,9 +42,6 @@ fun ImportPanel(
     val appContext = context.applicationContext
 
     val importing = ImportController.importing
-    val currentIndex = ImportController.currentIndex
-    val currentTotal = ImportController.currentTotal
-    val currentDisplayName = ImportController.currentDisplayName
 
     val runImport: (List<Uri>) -> Unit = { uris ->
         ImportController.start(appContext, uris, targetAlbumUuid)
@@ -120,63 +117,7 @@ fun ImportPanel(
             }
         }
 
-        if (importing && currentTotal > 0) {
-            Spacer(Modifier.height(12.dp))
-
-            LinearProgressIndicator(
-                progress = { currentIndex.toFloat() / currentTotal.toFloat() },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = stringResource(
-                    R.string.gallery_import_progress_line,
-                    currentIndex,
-                    currentTotal,
-                    currentDisplayName
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace
-            )
-        }
-
-        if (!importing && ImportController.hasSummary) {
-            Spacer(Modifier.height(12.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    text = formatSummary(
-                        context,
-                        ImportController.lastSuccessful,
-                        ImportController.lastFailed,
-                        ImportController.lastTotal
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
-        }
     }
-}
-
-private fun formatSummary(
-    context: android.content.Context,
-    successful: Int,
-    failed: Int,
-    total: Int
-): String = when {
-    failed == 0 -> context.getString(R.string.gallery_import_done_ok, successful, total)
-    successful == 0 -> context.getString(R.string.gallery_import_done_all_failed, total)
-    else -> context.getString(
-        R.string.gallery_import_done_partial,
-        successful, total, failed
-    )
 }
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)

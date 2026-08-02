@@ -5,7 +5,6 @@ import android.graphics.ImageDecoder
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,20 +31,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -58,7 +50,6 @@ import dev.encgallery.storage.EncryptedFileBlob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
-import kotlin.math.max
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,29 +68,43 @@ fun AlbumCoverCropScreen(
 
     LaunchedEffect(entry.uuid) {
         val decoded = withContext(Dispatchers.IO) {
-            try {
-                val plain = EncryptedFileBlob(KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS))
-                    .decryptToBytes(entry.blobFile)
-                val source = ImageDecoder.createSource(ByteBuffer.wrap(plain))
-                ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
-                    val w = info.size.width
-                    val h = info.size.height
-                    val longest = maxOf(w, h)
-                    if (longest > EDITOR_LONG_EDGE_PX) {
-                        val s = EDITOR_LONG_EDGE_PX.toFloat() / longest
-                        decoder.setTargetSize(
-                            (w * s).toInt().coerceAtLeast(1),
-                            (h * s).toInt().coerceAtLeast(1)
-                        )
-                    }
-                    decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-                }
+            val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+            val looksLikeVideo = try {
+                val name = EntriesRepository(keystore).getMeta(entry.blobFile)?.originalFilename
+                MimeSniffer.isLikelyVideo(name, entry.blobSizeBytes)
             } catch (t: Throwable) {
-                EncLog.w(
-                    "CoverCrop",
-                    "decode failed for ${entry.uuid}: ${t.javaClass.simpleName}: ${t.message}"
+                false
+            }
+            if (looksLikeVideo) {
+                ThumbnailFactory.videoFrameFromBlob(
+                    context.applicationContext, entry.blobFile, keystore
                 )
-                null
+            } else {
+                try {
+                    val plain = EncryptedFileBlob(keystore).decryptToBytes(entry.blobFile)
+                    val source = ImageDecoder.createSource(ByteBuffer.wrap(plain))
+                    ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                        val w = info.size.width
+                        val h = info.size.height
+                        val longest = maxOf(w, h)
+                        if (longest > EDITOR_LONG_EDGE_PX) {
+                            val s = EDITOR_LONG_EDGE_PX.toFloat() / longest
+                            decoder.setTargetSize(
+                                (w * s).toInt().coerceAtLeast(1),
+                                (h * s).toInt().coerceAtLeast(1)
+                            )
+                        }
+                        decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
+                } catch (t: Throwable) {
+                    EncLog.w(
+                        "CoverCrop",
+                        "image decode failed for ${entry.uuid}: ${t.javaClass.simpleName}: ${t.message}, trying video frame"
+                    )
+                    ThumbnailFactory.videoFrameFromBlob(
+                        context.applicationContext, entry.blobFile, keystore
+                    )
+                }
             }
         }
         if (decoded == null) {
@@ -197,9 +202,17 @@ private fun CropEditor(
     val imgH = bitmap.height.toFloat()
     val minImgEdge = min(imgW, imgH)
 
-    var cropSidePx by remember(bitmap) { mutableFloatStateOf(minImgEdge) }
-    var cropCenterX by remember(bitmap) { mutableFloatStateOf(imgW / 2f) }
-    var cropCenterY by remember(bitmap) { mutableFloatStateOf(imgH / 2f) }
+    val frame = remember(bitmap) {
+        CropFrameState(
+            imgW = imgW,
+            imgH = imgH,
+            aspect = 1f,
+            initialCropH = minImgEdge,
+            initialCenterX = imgW / 2f,
+            initialCenterY = imgH / 2f,
+            minEdgePx = MIN_CROP_PX
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(
@@ -229,22 +242,11 @@ private fun CropEditor(
                         width = with(density) { displayedW.toDp() },
                         height = with(density) { displayedH.toDp() }
                     )
-                    .pointerInput(bitmap) {
-                        detectTransformGestures { _, panScreen, zoom, _ ->
-
-                            cropSidePx = (cropSidePx * zoom).coerceIn(
-                                MIN_CROP_PX,
-                                minImgEdge
-                            )
-
-                            cropCenterX += panScreen.x / displayScale
-                            cropCenterY += panScreen.y / displayScale
-
-                            val half = cropSidePx / 2f
-                            cropCenterX = cropCenterX.coerceIn(half, imgW - half)
-                            cropCenterY = cropCenterY.coerceIn(half, imgH - half)
-                        }
-                    }
+                    .cropFrameGestures(
+                        state = frame,
+                        displayScale = displayScale,
+                        handleSlopPx = with(density) { CROP_HANDLE_SLOP_DP.dp.toPx() }
+                    )
             ) {
                 Image(
                     bitmap = bitmap.asImageBitmap(),
@@ -252,10 +254,8 @@ private fun CropEditor(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize()
                 )
-                CropOverlay(
-                    cropCenterX = cropCenterX,
-                    cropCenterY = cropCenterY,
-                    cropSidePx = cropSidePx,
+                CropFrameOverlay(
+                    state = frame,
                     displayScale = displayScale,
                     displayedW = displayedW,
                     displayedH = displayedH
@@ -282,11 +282,14 @@ private fun CropEditor(
                 Spacer(Modifier.size(8.dp))
                 TextButton(
                     onClick = {
-                        val cropX = (cropCenterX - cropSidePx / 2f) / imgW
-                        val cropY = (cropCenterY - cropSidePx / 2f) / imgH
-                        val cropW = cropSidePx / imgW
-                        val cropH = cropSidePx / imgH
-                        onSaveRect(NormalizedRect(cropX, cropY, cropW, cropH))
+                        onSaveRect(
+                            NormalizedRect(
+                                x = frame.left / imgW,
+                                y = frame.top / imgH,
+                                w = frame.cropW / imgW,
+                                h = frame.cropH / imgH
+                            )
+                        )
                     }
                 ) {
                     Text(
@@ -298,98 +301,6 @@ private fun CropEditor(
             }
         }
     }
-}
-
-@Composable
-private fun CropOverlay(
-    cropCenterX: Float,
-    cropCenterY: Float,
-    cropSidePx: Float,
-    displayScale: Float,
-    displayedW: Float,
-    displayedH: Float
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .drawWithContent {
-                drawContent()
-
-                val cropDispSide = cropSidePx * displayScale
-                val cropDispCx = cropCenterX * displayScale
-                val cropDispCy = cropCenterY * displayScale
-                val cropLeft = cropDispCx - cropDispSide / 2f
-                val cropTop = cropDispCy - cropDispSide / 2f
-                val cropRect = Rect(
-                    left = cropLeft,
-                    top = cropTop,
-                    right = cropLeft + cropDispSide,
-                    bottom = cropTop + cropDispSide
-                )
-
-                val scrim = Color.Black.copy(alpha = 0.55f)
-
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(0f, 0f),
-                    size = Size(displayedW, max(0f, cropTop))
-                )
-
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(0f, cropRect.bottom),
-                    size = Size(displayedW, max(0f, displayedH - cropRect.bottom))
-                )
-
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(0f, cropTop),
-                    size = Size(max(0f, cropLeft), cropRect.height)
-                )
-
-                drawRect(
-                    color = scrim,
-                    topLeft = Offset(cropRect.right, cropTop),
-                    size = Size(max(0f, displayedW - cropRect.right), cropRect.height)
-                )
-
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset(cropLeft, cropTop),
-                    size = Size(cropDispSide, cropDispSide),
-                    style = Stroke(width = 4f)
-                )
-
-                val third = cropDispSide / 3f
-                val gridColor = Color.White.copy(alpha = 0.4f)
-
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft + third, cropTop),
-                    end = Offset(cropLeft + third, cropTop + cropDispSide),
-                    strokeWidth = 1f
-                )
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft + 2f * third, cropTop),
-                    end = Offset(cropLeft + 2f * third, cropTop + cropDispSide),
-                    strokeWidth = 1f
-                )
-
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft, cropTop + third),
-                    end = Offset(cropLeft + cropDispSide, cropTop + third),
-                    strokeWidth = 1f
-                )
-                drawLine(
-                    color = gridColor,
-                    start = Offset(cropLeft, cropTop + 2f * third),
-                    end = Offset(cropLeft + cropDispSide, cropTop + 2f * third),
-                    strokeWidth = 1f
-                )
-            }
-    )
 }
 
 private const val EDITOR_LONG_EDGE_PX = 2048

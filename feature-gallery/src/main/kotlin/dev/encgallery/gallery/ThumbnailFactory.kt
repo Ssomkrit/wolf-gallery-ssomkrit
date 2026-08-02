@@ -73,6 +73,47 @@ object ThumbnailFactory {
         }
     }
 
+    fun videoFrameFromBlob(
+        context: Context,
+        blobFile: File,
+        keystore: KeystoreAesGcm
+    ): Bitmap? {
+        val blob = EncryptedFileBlob(keystore)
+        if (blob.isChunked(blobFile)) {
+            val source = ChunkedMediaDataSource(blob.openChunked(blobFile))
+            val retriever = MediaMetadataRetriever()
+            return try {
+                retriever.setDataSource(source)
+                getScaledFrameOrFallback(retriever)
+            } catch (t: Throwable) {
+                EncLog.w(
+                    TAG,
+                    "video frame (streamed) for ${blobFile.name}: ${t.javaClass.simpleName}: ${t.message}"
+                )
+                null
+            } finally {
+                try { retriever.release() } catch (_: Throwable) {}
+                try { source.close() } catch (_: Throwable) {}
+            }
+        }
+
+        val tempPlain = File(context.cacheDir, "coverframe_${blobFile.nameWithoutExtension}.tmp")
+        return try {
+            blob.decryptToFile(blobFile, tempPlain)
+            decodeVideoFrameFromFile(tempPlain)
+        } catch (t: Throwable) {
+            EncLog.w(
+                TAG,
+                "video frame (temp file) for ${blobFile.name}: ${t.javaClass.simpleName}: ${t.message}"
+            )
+            null
+        } finally {
+            if (tempPlain.exists() && !tempPlain.delete()) {
+                EncLog.w(TAG, "could not delete temp plaintext ${tempPlain.name}")
+            }
+        }
+    }
+
     private fun decodeImageFromUri(context: Context, uri: Uri): Bitmap? {
         val source = ImageDecoder.createSource(context.contentResolver, uri)
         return decodeImageWithTargetSize(source)

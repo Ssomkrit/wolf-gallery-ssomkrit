@@ -23,12 +23,13 @@
     <string name="gallery_grid_header">Содержимое vault\'а (%1$d)</string>
     <string name="gallery_empty">Vault пуст. Импортируйте фото или видео выше.</string>
 
-    <string name="gallery_action_title">Элемент vault\'а</string>
+    <string name="gallery_action_title">Медиафайл</string>
     <string name="gallery_action_size_line">Зашифровано: %1$d КиБ</string>
-    <string name="gallery_action_delete_warning">Будет перемещено в Корзину; можно восстановить в течение 30 дней.</string>
-    <string name="gallery_action_delete_warning_permanent">Будет удалено безвозвратно. Действие нельзя отменить. (Корзина отключена в Настройках.)</string>
+    <string name="gallery_action_delete_warning">Медиафайл будет перемещён в Корзину, восстановить его можно в течение 30 дней.</string>
+    <string name="gallery_action_delete_warning_permanent">Корзина отключена в Настройках, поэтому медиафайл будет стёрт сразу и вернуть его не получится.</string>
     <string name="gallery_action_btn_delete">Удалить</string>
     <string name="gallery_action_btn_close">Закрыть</string>
+    <string name="gallery_action_btn_cancel">Отмена</string>
     <string name="gallery_action_btn_move">Переместить…</string>
     <string name="gallery_action_btn_copy">Копировать…</string>
 
@@ -38,7 +39,6 @@
     <string name="gallery_action_move_failed">Не удалось переместить (см. лог)</string>
     <string name="gallery_action_copy_failed">Не удалось скопировать (см. лог)</string>
 
-    <string name="selection_count">Выбрано: %1$d</string>
     <string name="selection_cancel">Отменить выбор</string>
     <string name="selection_btn_share">Поделиться</string>
     <string name="selection_btn_delete">Удалить</string>
@@ -60,9 +60,24 @@
     <string name="entry_rename_btn_save">Сохранить</string>
 
     <string name="selection_opt_single_select_only">Только при одиночном выборе</string>
-    <string name="selection_delete_dialog_title">Удалить %1$d элементов?</string>
-    <string name="selection_delete_dialog_body">Элементы будут перемещены в Корзину. Их можно восстановить в течение 30 дней.</string>
-    <string name="selection_delete_dialog_body_permanent">Элементы будут удалены безвозвратно. Действие нельзя отменить. (Корзина отключена в Настройках.)</string>
+    <plurals name="selection_delete_dialog_title">
+        <item quantity="one">Удалить %d медиафайл?</item>
+        <item quantity="few">Удалить %d медиафайла?</item>
+        <item quantity="many">Удалить %d медиафайлов?</item>
+        <item quantity="other">Удалить %d медиафайлов?</item>
+    </plurals>
+    <plurals name="selection_delete_dialog_body">
+        <item quantity="one">Медиафайл будет перемещён в Корзину, восстановить его можно в течение 30 дней.</item>
+        <item quantity="few">Медиафайлы будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="many">Медиафайлы будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="other">Медиафайлы будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+    </plurals>
+    <plurals name="selection_delete_dialog_body_permanent">
+        <item quantity="one">Корзина отключена в Настройках, поэтому медиафайл будет стёрт сразу и вернуть его не получится.</item>
+        <item quantity="few">Корзина отключена в Настройках, поэтому выбранные медиафайлы будут стёрты сразу и вернуть их не получится.</item>
+        <item quantity="many">Корзина отключена в Настройках, поэтому выбранные медиафайлы будут стёрты сразу и вернуть их не получится.</item>
+        <item quantity="other">Корзина отключена в Настройках, поэтому выбранные медиафайлы будут стёрты сразу и вернуть их не получится.</item>
+    </plurals>
 
     <string name="dest_picker_title_move">Переместить в альбом</string>
     <string name="dest_picker_title_copy">Копировать в альбом</string>
@@ -71,10 +86,10 @@
     <string name="dest_picker_op_copy">Копирование</string>
     <string name="dest_picker_empty">Нет альбомов. Сначала создайте альбом.</string>
     <plurals name="dest_picker_subtitle_count">
-        <item quantity="one">%d элемент</item>
-        <item quantity="few">%d элемента</item>
-        <item quantity="many">%d элементов</item>
-        <item quantity="other">%d элементов</item>
+        <item quantity="one">%d медиафайл</item>
+        <item quantity="few">%d медиафайла</item>
+        <item quantity="many">%d медиафайлов</item>
+        <item quantity="other">%d медиафайлов</item>
     </plurals>
 
     <string name="op_progress_title_move">Перенос медиа в \"%1$s\"</string>
@@ -108,7 +123,6 @@
         <item quantity="other">%d альбомов</item>
     </plurals>
 
-    <string name="album_sel_count">Выбрано: %1$d</string>
     <string name="album_sel_cancel">Отменить выбор</string>
     <string name="album_sel_btn_group">Группа</string>
     <string name="album_sel_btn_move">Переместить</string>
@@ -139,9 +153,24 @@
         <item quantity="other">%d альбомов</item>
     </plurals>
 
-    <string name="album_multi_delete_dialog_title">Удалить %1$d альбомов?</string>
-    <string name="album_multi_delete_dialog_body">Выбранные альбомы со всеми фото будут перемещены в Корзину. Можно восстановить в течение 30 дней.</string>
-    <string name="album_multi_delete_dialog_body_permanent">Выбранные альбомы и ВСЕ их фото будут удалены безвозвратно. Действие нельзя отменить. (Корзина отключена в Настройках.)</string>
+    <plurals name="album_multi_delete_dialog_title">
+        <item quantity="one">Удалить %d альбом?</item>
+        <item quantity="few">Удалить %d альбома?</item>
+        <item quantity="many">Удалить %d альбомов?</item>
+        <item quantity="other">Удалить %d альбомов?</item>
+    </plurals>
+    <plurals name="album_multi_delete_dialog_body">
+        <item quantity="one">Альбом со всеми медиафайлами будет перемещён в Корзину, восстановить его можно в течение 30 дней.</item>
+        <item quantity="few">Выбранные альбомы со всеми медиафайлами будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="many">Выбранные альбомы со всеми медиафайлами будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="other">Выбранные альбомы со всеми медиафайлами будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+    </plurals>
+    <plurals name="album_multi_delete_dialog_body_permanent">
+        <item quantity="one">Корзина отключена в Настройках, поэтому альбом и ВСЕ медиафайлы внутри будут стёрты сразу, вернуть их не получится.</item>
+        <item quantity="few">Корзина отключена в Настройках, поэтому выбранные альбомы и ВСЕ медиафайлы внутри них будут стёрты сразу, вернуть их не получится.</item>
+        <item quantity="many">Корзина отключена в Настройках, поэтому выбранные альбомы и ВСЕ медиафайлы внутри них будут стёрты сразу, вернуть их не получится.</item>
+        <item quantity="other">Корзина отключена в Настройках, поэтому выбранные альбомы и ВСЕ медиафайлы внутри них будут стёрты сразу, вернуть их не получится.</item>
+    </plurals>
 
     <string name="group_drilldown_back">К альбомам</string>
     <plurals name="group_drilldown_subtitle">
@@ -158,9 +187,19 @@
     <string name="group_rename_dialog_title">Переименовать группу</string>
     <string name="group_delete_dialog_title">Удалить группу?</string>
     <string name="group_delete_dialog_body_empty">Пустая группа будет перемещена в Корзину. Можно восстановить в течение 30 дней.</string>
-    <string name="group_delete_dialog_body_empty_permanent">Пустая группа будет удалена безвозвратно. Альбомов внутри нет, ничего не пострадает. Действие нельзя отменить. (Корзина отключена в Настройках.)</string>
-    <string name="group_delete_dialog_body_with_albums">Группа и все %1$d альбом(а/ов) внутри (со всеми фото) будут перемещены в Корзину вместе. Можно восстановить в течение 30 дней.</string>
-    <string name="group_delete_dialog_body_with_albums_permanent">Группа будет удалена безвозвратно. %1$d альбом(а/ов) внутри НЕ удалятся — они вернутся в общий список альбомов. (Корзина отключена в Настройках.)</string>
+    <string name="group_delete_dialog_body_empty_permanent">Корзина отключена в Настройках, поэтому пустая группа будет стёрта сразу, вернуть её не получится. Альбомов внутри нет, больше ничего не пострадает.</string>
+    <plurals name="group_delete_dialog_body_with_albums">
+        <item quantity="one">Группа и %d альбом внутри со всеми медиафайлами будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="few">Группа и %d альбома внутри со всеми медиафайлами будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="many">Группа и %d альбомов внутри со всеми медиафайлами будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="other">Группа и %d альбомов внутри со всеми медиафайлами будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+    </plurals>
+    <plurals name="group_delete_dialog_body_with_albums_permanent">
+        <item quantity="one">Корзина отключена в Настройках, поэтому группа будет стёрта сразу. %d альбом внутри не будет удалён — он вернётся в общий список альбомов.</item>
+        <item quantity="few">Корзина отключена в Настройках, поэтому группа будет стёрта сразу. %d альбома внутри не будут удалены — они вернутся в общий список альбомов.</item>
+        <item quantity="many">Корзина отключена в Настройках, поэтому группа будет стёрта сразу. %d альбомов внутри не будут удалены — они вернутся в общий список альбомов.</item>
+        <item quantity="other">Корзина отключена в Настройках, поэтому группа будет стёрта сразу. %d альбомов внутри не будут удалены — они вернутся в общий список альбомов.</item>
+    </plurals>
     <string name="group_delete_btn_confirm">Удалить группу</string>
 
     <string name="fab_choose_title">Создать / Импорт</string>
@@ -188,7 +227,7 @@
     <string name="viewer_video_play">Воспроизвести</string>
     <string name="viewer_video_pause">Пауза</string>
     <string name="viewer_video_seek">Перемотка</string>
-    <string name="viewer_failed_title">Не удалось открыть элемент</string>
+    <string name="viewer_failed_title">Не удалось открыть медиафайл</string>
     <string name="viewer_failed_body">Расшифровка или декодирование не удались. Возможно, blob повреждён, или мастер-ключ был стёрт. Подробности в логе.</string>
     <string name="viewer_tap_to_close">Нажмите кнопку ✕ или Назад, чтобы закрыть.</string>
 
@@ -225,7 +264,7 @@
     <string name="wallpaper_crop_btn_save">Установить</string>
     <string name="wallpaper_crop_loading">Загрузка…</string>
 
-    <string name="viewer_info_dialog_title">Сведения о файле</string>
+    <string name="viewer_info_dialog_title">Сведения о медиафайле</string>
     <string name="viewer_info_label_filename">Имя файла</string>
     <string name="viewer_info_value_no_filename">— (импорт до 5.5e.5)</string>
     <string name="viewer_info_label_added">Добавлено в vault</string>
@@ -239,7 +278,7 @@
 
     <string name="viewer_share_chooser">Поделиться через…</string>
 
-    <string name="viewer_delete_dialog_title">Удалить элемент?</string>
+    <string name="viewer_delete_dialog_title">Удалить медиафайл?</string>
 
     <string name="search_field_hint">Поиск</string>
     <string name="search_close">Закрыть поиск</string>
@@ -278,9 +317,19 @@
 
     <string name="album_delete_dialog_title">Удалить альбом?</string>
     <string name="album_delete_dialog_body_empty">Пустой альбом будет перемещён в Корзину. Можно восстановить в течение 30 дней.</string>
-    <string name="album_delete_dialog_body_empty_permanent">Пустой альбом будет удалён безвозвратно. Действие нельзя отменить. (Корзина отключена в Настройках.)</string>
-    <string name="album_delete_dialog_body_with_entries">Альбом и все %1$d файлов внутри будут перемещены в Корзину. Можно восстановить в течение 30 дней.</string>
-    <string name="album_delete_dialog_body_with_entries_permanent">Альбом и все %1$d файлов внутри будут удалены безвозвратно. Действие нельзя отменить. (Корзина отключена в Настройках.)</string>
+    <string name="album_delete_dialog_body_empty_permanent">Корзина отключена в Настройках, поэтому пустой альбом будет стёрт сразу, вернуть его не получится.</string>
+    <plurals name="album_delete_dialog_body_with_entries">
+        <item quantity="one">Альбом и %d медиафайл внутри будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="few">Альбом и %d медиафайла внутри будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="many">Альбом и %d медиафайлов внутри будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+        <item quantity="other">Альбом и %d медиафайлов внутри будут перемещены в Корзину, восстановить их можно в течение 30 дней.</item>
+    </plurals>
+    <plurals name="album_delete_dialog_body_with_entries_permanent">
+        <item quantity="one">Корзина отключена в Настройках, поэтому альбом и %d медиафайл внутри будут стёрты сразу, вернуть их не получится.</item>
+        <item quantity="few">Корзина отключена в Настройках, поэтому альбом и %d медиафайла внутри будут стёрты сразу, вернуть их не получится.</item>
+        <item quantity="many">Корзина отключена в Настройках, поэтому альбом и %d медиафайлов внутри будут стёрты сразу, вернуть их не получится.</item>
+        <item quantity="other">Корзина отключена в Настройках, поэтому альбом и %d медиафайлов внутри будут стёрты сразу, вернуть их не получится.</item>
+    </plurals>
     <string name="album_delete_btn_confirm">Удалить</string>
 
     <string name="album_action_rename">Переименовать</string>
@@ -290,6 +339,7 @@
 
     <string name="cover_picker_title">Выберите обложку</string>
     <string name="cover_picker_empty">Альбом пуст — добавьте фото, прежде чем выбирать обложку.</string>
+    <string name="cover_picker_current">Текущая обложка</string>
     <string name="cover_picker_back">Назад</string>
     <string name="scroll_to_top">Наверх</string>
     <string name="cover_crop_title">Обрезать обложку</string>
@@ -312,11 +362,101 @@
     <string name="trash_screen_back">Назад</string>
     <string name="trash_screen_empty">Корзина пуста</string>
     <string name="trash_expired">Истёк</string>
-    <plurals name="trash_screen_count">
+    <plurals name="sel_count_files">
+        <item quantity="one">Выбран %d медиафайл</item>
+        <item quantity="few">Выбрано %d медиафайла</item>
+        <item quantity="many">Выбрано %d медиафайлов</item>
+        <item quantity="other">Выбрано %d медиафайлов</item>
+    </plurals>
+    <plurals name="trash_screen_count_files">
+        <item quantity="one">%d медиафайл в Корзине</item>
+        <item quantity="few">%d медиафайла в Корзине</item>
+        <item quantity="many">%d медиафайлов в Корзине</item>
+        <item quantity="other">%d медиафайлов в Корзине</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_files">
+        <item quantity="one">%d медиафайл будет удалён безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">%d медиафайла будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">%d медиафайлов будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">%d медиафайлов будут удалены безвозвратно. Действие нельзя отменить.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_files">
+        <item quantity="one">Единственный медиафайл в Корзине будет удалён безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">Все %d медиафайла в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">Все %d медиафайлов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">Все %d медиафайлов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+    </plurals>
+    <plurals name="sel_count_albums">
+        <item quantity="one">Выбран %d альбом</item>
+        <item quantity="few">Выбрано %d альбома</item>
+        <item quantity="many">Выбрано %d альбомов</item>
+        <item quantity="other">Выбрано %d альбомов</item>
+    </plurals>
+    <plurals name="trash_screen_count_albums">
+        <item quantity="one">%d альбом в Корзине</item>
+        <item quantity="few">%d альбома в Корзине</item>
+        <item quantity="many">%d альбомов в Корзине</item>
+        <item quantity="other">%d альбомов в Корзине</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_albums">
+        <item quantity="one">%d альбом будет удалён безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">%d альбома будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">%d альбомов будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">%d альбомов будут удалены безвозвратно. Действие нельзя отменить.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_albums">
+        <item quantity="one">Единственный альбом в Корзине будет удалён безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">Все %d альбома в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">Все %d альбомов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">Все %d альбомов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+    </plurals>
+    <plurals name="sel_count_groups">
+        <item quantity="one">Выбрана %d группа</item>
+        <item quantity="few">Выбрано %d группы</item>
+        <item quantity="many">Выбрано %d групп</item>
+        <item quantity="other">Выбрано %d групп</item>
+    </plurals>
+    <plurals name="trash_screen_count_groups">
+        <item quantity="one">%d группа в Корзине</item>
+        <item quantity="few">%d группы в Корзине</item>
+        <item quantity="many">%d групп в Корзине</item>
+        <item quantity="other">%d групп в Корзине</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_groups">
+        <item quantity="one">%d группа будет удалена безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">%d группы будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">%d групп будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">%d групп будут удалены безвозвратно. Действие нельзя отменить.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_groups">
+        <item quantity="one">Единственная группа в Корзине будет удалена безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">Все %d группы в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">Все %d групп в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">Все %d групп в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+    </plurals>
+    <plurals name="sel_count_mixed">
+        <item quantity="one">Выбран %d элемент</item>
+        <item quantity="few">Выбрано %d элемента</item>
+        <item quantity="many">Выбрано %d элементов</item>
+        <item quantity="other">Выбрано %d элементов</item>
+    </plurals>
+    <plurals name="trash_screen_count_mixed">
         <item quantity="one">%d элемент в Корзине</item>
         <item quantity="few">%d элемента в Корзине</item>
         <item quantity="many">%d элементов в Корзине</item>
         <item quantity="other">%d элементов в Корзине</item>
+    </plurals>
+    <plurals name="trash_delete_forever_dialog_body_mixed">
+        <item quantity="one">%d элемент будет удалён безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">%d элемента будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">%d элементов будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">%d элементов будут удалены безвозвратно. Действие нельзя отменить.</item>
+    </plurals>
+    <plurals name="trash_empty_dialog_body_mixed">
+        <item quantity="one">Единственный элемент в Корзине будет удалён безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="few">Все %d элемента в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="many">Все %d элементов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
+        <item quantity="other">Все %d элементов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
     </plurals>
     <plurals name="trash_days_remaining">
         <item quantity="one">%dд</item>
@@ -326,28 +466,18 @@
     </plurals>
 
     <string name="trash_sel_cancel">Отменить выбор</string>
-    <string name="trash_sel_count">Выбрано: %1$d</string>
+    
     <string name="trash_action_restore">Восстановить</string>
 
     <string name="trash_action_delete_forever">Удалить навсегда</string>
     <string name="trash_action_empty">Очистить корзину</string>
 
     <string name="trash_delete_forever_dialog_title">Удалить навсегда?</string>
-    <plurals name="trash_delete_forever_dialog_body">
-        <item quantity="one">%d элемент будет удалён безвозвратно. Действие нельзя отменить.</item>
-        <item quantity="few">%d элемента будут удалены безвозвратно. Действие нельзя отменить.</item>
-        <item quantity="many">%d элементов будут удалены безвозвратно. Действие нельзя отменить.</item>
-        <item quantity="other">%d элементов будут удалены безвозвратно. Действие нельзя отменить.</item>
-    </plurals>
+    
     <string name="trash_delete_forever_btn_confirm">Удалить</string>
 
     <string name="trash_empty_dialog_title">Очистить корзину?</string>
-    <plurals name="trash_empty_dialog_body">
-        <item quantity="one">Все %d элемент в Корзине будет удалён безвозвратно. Действие нельзя отменить.</item>
-        <item quantity="few">Все %d элемента в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
-        <item quantity="many">Все %d элементов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
-        <item quantity="other">Все %d элементов в Корзине будут удалены безвозвратно. Действие нельзя отменить.</item>
-    </plurals>
+    
     <string name="trash_empty_btn_confirm">Очистить</string>
 
     <string name="trash_dialog_btn_cancel">Отмена</string>
@@ -366,4 +496,8 @@
     </plurals>
     <string name="trash_album_unnamed">Без имени</string>
     <string name="trash_group_unnamed">Без имени</string>
+    <string name="op_progress_pause">Пауза</string>
+    <string name="op_progress_resume">Продолжить</string>
+    <string name="op_progress_cancel">Отмена</string>
+    <string name="trash_action_restore_all">Восстановить всё</string>
 </resources>

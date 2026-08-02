@@ -70,6 +70,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -113,7 +114,11 @@ import dev.encgallery.crypto.KeystoreAesGcm
 import dev.encgallery.logging.EncLog
 import dev.encgallery.storage.EncryptedFileBlob
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.ByteBuffer
@@ -591,20 +596,42 @@ private fun PagerPage(
     }
 
     LaunchedEffect(entry.uuid, mediaKind, isCurrent) {
-        if (mediaKind == MediaKind.VIDEO && isCurrent && videoSource == null) {
-            val src = withContext(Dispatchers.IO) {
-                try {
-                    decryptVideoForPlayback(
-                        context.applicationContext,
-                        entry.blobFile,
-                        KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS),
-                    )
-                } catch (t: Throwable) {
-                    EncLog.w("Viewer", "video decrypt ${entry.uuid} failed: ${t.javaClass.simpleName}")
-                    null
+        if (mediaKind != MediaKind.VIDEO) return@LaunchedEffect
+        if (!isCurrent) {
+            val stale = videoSource
+            videoSource = null
+            if (stale != null) {
+                withContext(NonCancellable + Dispatchers.IO) { stale.close() }
+            }
+            return@LaunchedEffect
+        }
+        if (videoSource != null) return@LaunchedEffect
+        delay(VIDEO_SETTLE_DELAY_MS)
+        val handoff = arrayOfNulls<VideoSource>(1)
+        try {
+            withContext(Dispatchers.IO) {
+                handoff[0] = videoDecryptGate.withLock {
+                    try {
+                        decryptVideoForPlayback(
+                            context.applicationContext,
+                            entry.blobFile,
+                            KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS),
+                        )
+                    } catch (t: Throwable) {
+                        EncLog.w("Viewer", "video decrypt ${entry.uuid} failed: ${t.javaClass.simpleName}")
+                        null
+                    }
                 }
             }
-            if (src != null) videoSource = src else failed = true
+            val ready = handoff[0]
+            handoff[0] = null
+            if (ready != null) videoSource = ready else failed = true
+        } finally {
+            val orphan = handoff[0]
+            handoff[0] = null
+            if (orphan != null) {
+                withContext(NonCancellable + Dispatchers.IO) { orphan.close() }
+            }
         }
     }
 
@@ -671,8 +698,12 @@ private fun PagerPage(
         when {
             mediaKind == MediaKind.VIDEO -> {
                 val vs = videoSource
-                if (vs != null) {
-                    VideoPlayer(
+                when {
+                    failed -> ViewerPlaceholder(
+                        title = stringResource(R.string.viewer_failed_title),
+                        body = stringResource(R.string.viewer_failed_body)
+                    )
+                    vs != null && isCurrent -> VideoPlayer(
                         source = vs,
                         entryUuid = entry.uuid,
                         isCurrent = isCurrent,
@@ -680,11 +711,10 @@ private fun PagerPage(
                         scale = scale,
                         offset = offset,
                         onAspect = { videoAspectRatio = it },
+                        onFatalError = { failed = true },
                         modifier = Modifier.fillMaxSize()
                     )
-                } else {
-
-                    VideoPoster(placeholder = placeholder)
+                    else -> VideoPoster(placeholder = placeholder)
                 }
             }
             animatedDrawable != null -> AnimatedImage(
@@ -823,6 +853,30 @@ private fun applyViewerSampleSize(decoder: ImageDecoder, info: ImageDecoder.Imag
     }
 }
 
+private class ManagedPlayer(private val source: VideoSource) : RememberObserver {
+    val player: MediaPlayer = MediaPlayer()
+    private var released = false
+
+    @Synchronized
+    fun release() {
+        if (released) return
+        released = true
+        try { player.setSurface(null) } catch (_: Throwable) {}
+        try { player.release() } catch (_: Throwable) {}
+        try { source.close() } catch (_: Throwable) {}
+    }
+
+    override fun onRemembered() {}
+
+    override fun onForgotten() {
+        release()
+    }
+
+    override fun onAbandoned() {
+        release()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VideoPlayer(
@@ -833,11 +887,13 @@ private fun VideoPlayer(
     scale: Float,
     offset: Offset,
     onAspect: (Float) -> Unit,
+    onFatalError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
-    val latestIsCurrent by rememberUpdatedState(isCurrent)
-    val player = remember(source) { MediaPlayer() }
+    val latestOnFatalError by rememberUpdatedState(onFatalError)
+    val holder = remember(source) { ManagedPlayer(source) }
+    val player = holder.player
     var prepared by remember(source) { mutableStateOf(false) }
     var playing by remember(source) { mutableStateOf(false) }
     var durationMs by remember(source) { mutableIntStateOf(0) }
@@ -900,26 +956,29 @@ private fun VideoPlayer(
         }
         player.setOnErrorListener { _, what, extra ->
             EncLog.w("Viewer", "MediaPlayer error what=$what extra=$extra")
+            holder.release()
+            latestOnFatalError()
             true
         }
         try {
             when (source) {
+                is VideoSource.Streaming -> player.setDataSource(source.dataSource)
                 is VideoSource.InMemory -> player.setDataSource(source.dataSource)
                 is VideoSource.TempFile -> player.setDataSource(source.file.absolutePath)
             }
             player.prepareAsync()
         } catch (t: Throwable) {
             EncLog.w("Viewer", "video setDataSource failed: ${t.javaClass.simpleName}")
+            holder.release()
+            latestOnFatalError()
         }
         onDispose {
 
-            if (latestIsCurrent) {
-                GallerySession.lastViewerVideoUuid = entryUuid
-                GallerySession.lastViewerVideoPositionMs = positionMs.toInt()
+            GallerySession.lastViewerVideoUuid = entryUuid
+            GallerySession.lastViewerVideoPositionMs = positionMs.toInt()
 
-                GallerySession.lastViewerVideoWasPlaying = intendedPlaying
-            }
-            try { player.release() } catch (_: Throwable) {}
+            GallerySession.lastViewerVideoWasPlaying = intendedPlaying
+            holder.release()
         }
     }
 
@@ -1303,7 +1362,8 @@ private fun EntryInfoDialog(
                 null
             }
             try {
-                val bytes = EncryptedFileBlob(keystore).decryptToBytes(entry.blobFile)
+                val bytes = EncryptedFileBlob(keystore)
+                    .peekPlaintext(entry.blobFile, INFO_PROBE_BYTES)
                 val mimeOut = MimeSniffer.sniff(bytes)
                 val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
@@ -1469,7 +1529,7 @@ private fun DeleteConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.gallery_action_btn_close))
+                Text(stringResource(R.string.gallery_action_btn_cancel))
             }
         }
     )
@@ -1606,6 +1666,12 @@ private const val DOUBLE_TAP_ZOOM = 2f
 private const val MAX_ZOOM = 5f
 
 private const val CHROME_ANIM_MS = 180
+
+private const val VIDEO_SETTLE_DELAY_MS = 280L
+
+private const val INFO_PROBE_BYTES = 2 * 1024 * 1024
+
+private val videoDecryptGate = Mutex()
 
 @Composable
 private fun ViewerRenameDialog(

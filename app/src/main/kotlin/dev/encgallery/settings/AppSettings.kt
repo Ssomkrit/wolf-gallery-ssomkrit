@@ -62,6 +62,9 @@ object AppSettings {
 
     private const val KEY_PHOTO_GRID_LAYOUT = "photo_grid_layout"
 
+    private const val KEY_EXPORT_FIXED_FOLDER = "export_fixed_folder"
+    private const val KEY_EXPORT_FOLDER_URI = "export_folder_uri"
+
     val ALBUM_COLUMN_CHOICES = listOf(2, 3)
     private const val DEFAULT_ALBUM_COLUMNS = 3
 
@@ -124,6 +127,10 @@ object AppSettings {
     val photoGridLayout: MutableState<PhotoGridLayout> =
         mutableStateOf(PhotoGridLayout.DEFAULT)
 
+    val exportToFixedFolder: MutableState<Boolean> = mutableStateOf(false)
+
+    val exportFolderUri: MutableState<String> = mutableStateOf("")
+
     fun init(ctx: Context) {
         prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         loggingEnabled.value = prefs.getBoolean(KEY_LOGGING_ENABLED, true)
@@ -177,6 +184,9 @@ object AppSettings {
         photoGridLayout.value = PhotoGridLayout.fromNameOrDefault(
             prefs.getString(KEY_PHOTO_GRID_LAYOUT, null)
         )
+
+        exportToFixedFolder.value = prefs.getBoolean(KEY_EXPORT_FIXED_FOLDER, false)
+        exportFolderUri.value = prefs.getString(KEY_EXPORT_FOLDER_URI, "").orEmpty()
 
         EncLog.enabled = loggingEnabled.value
     }
@@ -376,7 +386,11 @@ object AppSettings {
             .remove(KEY_BF_WIPE_AFTER_N)
             .remove(KEY_FAILURE_COUNT)
             .remove(KEY_LAST_FAILURE_AT)
+            .remove(KEY_EXPORT_FIXED_FOLDER)
+            .remove(KEY_EXPORT_FOLDER_URI)
             .apply()
+        exportToFixedFolder.value = false
+        exportFolderUri.value = ""
         wizardComplete.value = false
         cryptoMode.value = CryptoMode.DEFAULT
         lockMethod.value = LockMethod.DEFAULT
@@ -490,6 +504,20 @@ object AppSettings {
         photoGridLayout.value = value
         prefs.edit().putString(KEY_PHOTO_GRID_LAYOUT, value.name).apply()
         EncLog.i("AppSettings", "photoGridLayout set to ${value.name}")
+    }
+
+    fun setExportToFixedFolder(value: Boolean) {
+        if (exportToFixedFolder.value == value) return
+        exportToFixedFolder.value = value
+        prefs.edit().putBoolean(KEY_EXPORT_FIXED_FOLDER, value).apply()
+        EncLog.i("AppSettings", "exportToFixedFolder set to $value")
+    }
+
+    fun setExportFolderUri(value: String) {
+        if (exportFolderUri.value == value) return
+        exportFolderUri.value = value
+        prefs.edit().putString(KEY_EXPORT_FOLDER_URI, value).apply()
+        EncLog.i("AppSettings", "export folder ${if (value.isEmpty()) "cleared" else "updated"}")
     }
 
     fun setThemeVariant(value: ThemeVariant) {

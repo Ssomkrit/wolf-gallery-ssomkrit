@@ -114,4 +114,19 @@
     <string name="about_email_copied">Correo copiado</string>
     <string name="about_source_header">Código fuente</string>
     <string name="about_link_copied">Enlace copiado</string>
+    <string name="settings_cat_transfer_title">Importar, exportar, copias</string>
+    <string name="settings_cat_transfer_subtitle">Dónde se guardan los archivos exportados</string>
+    <string name="settings_transfer_export_header">Destino de exportación</string>
+    <string name="settings_export_ask_title">Preguntar cada vez</string>
+    <string name="settings_export_ask_desc">Se abre un selector de carpeta en cada exportación. La carpeta de abajo sigue guardada, pero no se usa.</string>
+    <string name="settings_export_fixed_title">Usar siempre una carpeta</string>
+    <string name="settings_export_fixed_desc">Las exportaciones van directas a la carpeta de abajo, sin preguntar.</string>
+    <string name="settings_export_folder_label">Carpeta de exportación</string>
+    <string name="settings_export_browse">Examinar</string>
+    <string name="settings_export_folder_note">La aplicación conserva acceso de escritura solo a esta carpeta y no puede leer lo que ya hay en ella. La ruta se recuerda hasta que la cambies aquí: quitar y volver a poner una tarjeta de memoria no la borra.</string>
+    <string name="settings_transfer_coming_soon">Pronto</string>
+    <string name="settings_transfer_import_title">Importación</string>
+    <string name="settings_transfer_import_desc">Aquí estarán los ajustes de importación. Añadir archivos ya funciona desde la galería.</string>
+    <string name="settings_transfer_backup_title">Copias de seguridad</string>
+    <string name="settings_transfer_backup_desc">Una copia cifrada portátil que se abre en otro dispositivo con tu contraseña.</string>
 </resources>

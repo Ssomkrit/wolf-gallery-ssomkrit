@@ -167,6 +167,11 @@ fun DeviceImportPickerScreen(
                         columns = columns,
                         modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
                     )
+                    ScrollToTopButton(
+                        state = gridState,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        appearAfterIndex = columns * 4 - 1
+                    )
                 }
                 val chosen = buckets.filter { it.id in selectedIds }
                 Button(

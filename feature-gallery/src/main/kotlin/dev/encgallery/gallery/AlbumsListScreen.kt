@@ -837,7 +837,7 @@ private fun AlbumTile(
 
     val customCoverUuid = summary.meta.coverEntryUuid
     val cacheKey = customCoverUuid ?: summary.firstEntry?.uuid
-    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt) {
+    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
         mutableStateOf<Bitmap?>(null)
     }
 
@@ -845,7 +845,7 @@ private fun AlbumTile(
 
     val isEmpty = customCoverUuid == null && firstEntry == null
     val emptyColors = emptyCoverColors()
-    LaunchedEffect(cacheKey, summary.meta.modifiedAt) {
+    LaunchedEffect(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
         if (customCoverUuid == null && firstEntry == null) return@LaunchedEffect
         coverBitmap = withContext(Dispatchers.IO) {
             val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
@@ -1147,9 +1147,15 @@ private fun AlbumDeleteDialog(
         }
     } else {
         if (trashEnabled) {
-            stringResource(R.string.album_delete_dialog_body_with_entries, summary.entryCount)
+            pluralStringResource(
+                R.plurals.album_delete_dialog_body_with_entries,
+                summary.entryCount, summary.entryCount
+            )
         } else {
-            stringResource(R.string.album_delete_dialog_body_with_entries_permanent, summary.entryCount)
+            pluralStringResource(
+                R.plurals.album_delete_dialog_body_with_entries_permanent,
+                summary.entryCount, summary.entryCount
+            )
         }
     }
     InWindowDialog(
@@ -1209,7 +1215,7 @@ private fun AlbumSelectionTopBar(
                 )
             }
             Text(
-                text = stringResource(R.string.album_sel_count, count),
+                text = pluralStringResource(selCountRes(selectionKindOf(0, count, 0)), count, count),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium
             )
@@ -1322,16 +1328,16 @@ private fun AlbumMultiDeleteConfirmDialog(
     onConfirm: () -> Unit
 ) {
     val bodyResId = if (trashEnabled) {
-        R.string.album_multi_delete_dialog_body
+        R.plurals.album_multi_delete_dialog_body
     } else {
-        R.string.album_multi_delete_dialog_body_permanent
+        R.plurals.album_multi_delete_dialog_body_permanent
     }
     InWindowDialog(
         onDismiss = onDismiss,
-        title = { Text(stringResource(R.string.album_multi_delete_dialog_title, count)) },
+        title = { Text(pluralStringResource(R.plurals.album_multi_delete_dialog_title, count, count)) },
         text = {
             Text(
-                text = stringResource(bodyResId),
+                text = pluralStringResource(bodyResId, count),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )
@@ -1538,11 +1544,11 @@ private fun MosaicQuadrant(
     val customCoverUuid = album?.meta?.coverEntryUuid
     val cacheKey = customCoverUuid ?: album?.firstEntry?.uuid
 
-    var bitmap by remember(cacheKey, album?.meta?.modifiedAt, album?.entryCount) {
+    var bitmap by remember(cacheKey, album?.meta?.modifiedAt, album?.meta?.coverRevision, album?.entryCount) {
         mutableStateOf<Bitmap?>(null)
     }
     if (album != null) {
-        LaunchedEffect(cacheKey, album.meta.modifiedAt, album.entryCount) {
+        LaunchedEffect(cacheKey, album.meta.modifiedAt, album.meta.coverRevision, album.entryCount) {
             if (customCoverUuid == null && album.firstEntry == null) return@LaunchedEffect
             bitmap = withContext(Dispatchers.IO) {
                 val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
@@ -1655,9 +1661,15 @@ private fun GroupDeleteConfirmDialog(
         }
     } else {
         if (trashEnabled) {
-            stringResource(R.string.group_delete_dialog_body_with_albums, summary.albums.size)
+            pluralStringResource(
+                R.plurals.group_delete_dialog_body_with_albums,
+                summary.albums.size, summary.albums.size
+            )
         } else {
-            stringResource(R.string.group_delete_dialog_body_with_albums_permanent, summary.albums.size)
+            pluralStringResource(
+                R.plurals.group_delete_dialog_body_with_albums_permanent,
+                summary.albums.size, summary.albums.size
+            )
         }
     }
     InWindowDialog(

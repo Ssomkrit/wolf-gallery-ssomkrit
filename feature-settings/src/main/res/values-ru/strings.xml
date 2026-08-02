@@ -115,4 +115,19 @@
     <string name="about_email_copied">Email скопирован</string>
     <string name="about_source_header">Исходный код</string>
     <string name="about_link_copied">Ссылка скопирована</string>
+    <string name="settings_cat_transfer_title">Импорт, экспорт, резервные копии</string>
+    <string name="settings_cat_transfer_subtitle">Куда сохраняются экспортированные файлы</string>
+    <string name="settings_transfer_export_header">Место экспорта</string>
+    <string name="settings_export_ask_title">Спрашивать каждый раз</string>
+    <string name="settings_export_ask_desc">При каждом экспорте открывается выбор папки. Папка ниже остаётся сохранённой, но не используется.</string>
+    <string name="settings_export_fixed_title">Всегда одна папка</string>
+    <string name="settings_export_fixed_desc">Экспорт идёт сразу в папку ниже, без вопросов.</string>
+    <string name="settings_export_folder_label">Папка экспорта</string>
+    <string name="settings_export_browse">Обзор</string>
+    <string name="settings_export_folder_note">Приложение сохраняет доступ на запись только в эту папку и не может прочитать то, что уже лежит в ней. Путь помнится, пока вы не измените его здесь — извлечение и установка карты памяти его не сбрасывают.</string>
+    <string name="settings_transfer_coming_soon">Скоро</string>
+    <string name="settings_transfer_import_title">Импорт</string>
+    <string name="settings_transfer_import_desc">Здесь появятся настройки импорта. Добавление файлов уже работает из галереи.</string>
+    <string name="settings_transfer_backup_title">Резервные копии</string>
+    <string name="settings_transfer_backup_desc">Переносимая зашифрованная копия, которая открывается на другом устройстве по вашему паролю.</string>
 </resources>
