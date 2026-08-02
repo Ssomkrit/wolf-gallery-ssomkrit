@@ -72,6 +72,8 @@ And this is only the beginning — **Wolf Gallery is actively evolving, with a l
 - **Bar placement** — keep the search/action bar up top or down low, whichever suits your grip.
 
 **🧩 Comfort**
+- **Large files welcome** — big videos and high-resolution photos import without running into a memory ceiling, and they open straight away.
+- **Pause & cancel** — long imports, copies, moves and exports can be paused or cancelled, and cancelling puts things back the way they were.
 - A built-in **trash** so deletions can be undone.
 - A guided **first-run wizard** for an effortless start.
 - Available in **several languages**, with more translations on the way.
@@ -81,10 +83,12 @@ And this is only the beginning — **Wolf Gallery is actively evolving, with a l
 ### Encryption
 
 - **AES-256-GCM** authenticated encryption — protects both the *confidentiality* of your files and their *integrity* (any tampering is detected on decryption).
+- **Chunked streaming format** — each file is encrypted in 1 MiB chunks, every chunk carrying its own nonce and authentication tag, keyed per file and bound to the file header. Tampering is therefore caught at chunk granularity, and that covers reordering, duplicating or truncating chunks rather than only flipping a byte. Nothing is ever held whole in memory, so the size of a photo or video is no longer a limit on what the vault can take.
+- **No temporary plaintext copies** — a video plays straight out of the vault, chunk by chunk, as it is read. Earlier versions had to decrypt the whole file into a temporary plaintext file before playback could start; that file is gone. Exporting to your device is the only time a file leaves the vault in the clear, and only because you asked for it.
 - **Argon2id** key derivation — the memory-hard winner of the Password Hashing Competition. Your passphrase is stretched into a key that is expensive to brute-force on GPUs and ASICs; the key itself is never stored in plaintext.
 - **Hardware-backed keys** — the master key lives in the Android Keystore (StrongBox-backed where available), and AES runs on the CPU's hardware crypto extensions for speed.
 - **Quantum-resistant by design** — the vault is symmetric-only (AES-256), with no asymmetric key exchange. There is nothing for Shor's algorithm to break, and "harvest now, decrypt later" does not apply to a local vault. Under Grover's algorithm AES-256 still retains a ~128-bit security margin.
-- **Native crypto core** — cryptographic operations run in C/C++, and key material is zeroed in memory after use.
+- **Native crypto core** — Argon2id key derivation runs in C/C++, and key material is zeroed in native memory the moment it is no longer needed. Bulk AES-256-GCM runs through the platform's hardware-accelerated crypto provider.
 
 > **Performance note:** encryption, decryption, and import speed scale with your device's CPU and available RAM. Argon2id is *deliberately* memory-hard, so stronger settings cost more time on lower-end hardware — that cost is the security.
 
@@ -101,7 +105,7 @@ Your media is stored in an **isolated, encrypted vault** inside the app's privat
 - **Against casual access** — screenshots and Recents previews are blocked, and repeated wrong attempts are slowed by exponential backoff (with an optional wipe-after-N-failures).
 
 **How it protects:**
-- Authenticated AES-256-GCM encryption (confidentiality + tamper detection).
+- Authenticated AES-256-GCM encryption in a chunked streaming format (confidentiality plus tamper detection, including chunk reordering and truncation).
 - Keys derived from your passphrase with Argon2id — never stored in plaintext.
 - Hardware-backed key storage (Android Keystore / StrongBox).
 - A native crypto core with locked, scrubbed memory.
