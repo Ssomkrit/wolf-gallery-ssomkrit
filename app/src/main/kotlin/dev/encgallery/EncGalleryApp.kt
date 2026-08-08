@@ -3,10 +3,16 @@ package dev.encgallery
 import android.app.Application
 import dev.encgallery.crypto.PasswordChange
 import dev.encgallery.crypto.VaultDataKey
+import dev.encgallery.gallery.ThumbnailLoader
 import dev.encgallery.logging.EncLog
 import dev.encgallery.settings.AppSettings
 
 class EncGalleryApp : Application() {
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        ThumbnailLoader.onTrimMemory(level)
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -20,6 +26,8 @@ class EncGalleryApp : Application() {
         }
 
         AppSettings.init(this)
+
+        ThumbnailLoader.configure(this)
 
         VaultDataKey.init(this)
 

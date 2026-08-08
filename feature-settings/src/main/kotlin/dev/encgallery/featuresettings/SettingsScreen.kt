@@ -55,7 +55,6 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -150,13 +149,28 @@ fun SettingsScreen(
         SettingsSession.lastOpenCategory = current
     }
 
-    BackHandler {
-        if (current != SettingsCategory.HOME) {
-            current = SettingsCategory.HOME
-        } else {
-            onClose()
+    var changingSecret by remember {
+        mutableStateOf(
+            SettingsSession.lastSecretChangeOpen &&
+                SettingsSession.lastOpenCategory == SettingsCategory.SECURITY
+        )
+    }
+    LaunchedEffect(current) {
+        if (current != SettingsCategory.SECURITY) changingSecret = false
+    }
+    LaunchedEffect(changingSecret) {
+        SettingsSession.lastSecretChangeOpen = changingSecret
+    }
+
+    val goBack = {
+        when {
+            changingSecret -> changingSecret = false
+            current != SettingsCategory.HOME -> current = SettingsCategory.HOME
+            else -> onClose()
         }
     }
+
+    BackHandler { goBack() }
 
     val title = when (current) {
         SettingsCategory.HOME -> stringResource(R.string.settings_title)
@@ -186,13 +200,7 @@ fun SettingsScreen(
                         .padding(start = 4.dp, end = 12.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.Top
                 ) {
-                    IconButton(onClick = {
-                        if (current != SettingsCategory.HOME) {
-                            current = SettingsCategory.HOME
-                        } else {
-                            onClose()
-                        }
-                    }) {
+                    IconButton(onClick = { goBack() }) {
                         ThemedIcon(
                             vector = Icons.Default.ArrowBack,
                             contentDescription = stringResource(R.string.settings_back)
@@ -207,6 +215,9 @@ fun SettingsScreen(
                 }
             }
         ) { innerPadding ->
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalSettingsCategory provides current
+            ) {
             when (current) {
                 SettingsCategory.HOME -> SettingsHome(
                     onNavigate = { current = it },
@@ -218,6 +229,8 @@ fun SettingsScreen(
                     screenshotsAllowed = screenshotsAllowed,
                     onScreenshotsChange = onScreenshotsChange,
                     changePasswordContent = changePasswordContent,
+                    changingSecret = changingSecret,
+                    onChangingSecretChange = { changingSecret = it },
                     modifier = Modifier.padding(innerPadding)
                 )
                 SettingsCategory.APPEARANCE -> AppearanceCategory(
@@ -272,6 +285,7 @@ fun SettingsScreen(
                     appVersionName = appVersionName,
                     modifier = Modifier.padding(innerPadding)
                 )
+            }
             }
         }
     }
@@ -341,11 +355,19 @@ private fun VerticalScrollbar(
     )
 }
 
+internal val LocalSettingsCategory =
+    androidx.compose.runtime.compositionLocalOf { SettingsCategory.HOME }
+
+@Composable
+private fun rememberCategoryScrollState(
+    category: SettingsCategory = LocalSettingsCategory.current
+): ScrollState = rememberSavedScrollState("category:${category.name}")
+
 @Composable
 private fun SettingsScrollColumn(
     modifier: Modifier = Modifier,
     contentPadding: Dp = 16.dp,
-    state: ScrollState = rememberScrollState(),
+    state: ScrollState = rememberCategoryScrollState(),
     content: @Composable ColumnScope.() -> Unit
 ) {
     Box(modifier.fillMaxSize()) {
@@ -365,7 +387,7 @@ private fun SettingsHome(
     onNavigate: (SettingsCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val state = rememberScrollState()
+    val state = rememberCategoryScrollState(SettingsCategory.HOME)
     Column(modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Column(
@@ -441,13 +463,13 @@ private fun SecurityCategory(
     screenshotsAllowed: Boolean,
     onScreenshotsChange: (Boolean) -> Unit,
     changePasswordContent: @Composable (onClose: () -> Unit) -> Unit,
+    changingSecret: Boolean,
+    onChangingSecretChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showChange by remember { mutableStateOf(false) }
-
-    if (showChange) {
+    if (changingSecret) {
         androidx.compose.foundation.layout.Box(modifier = modifier) {
-            changePasswordContent { showChange = false }
+            changePasswordContent { onChangingSecretChange(false) }
         }
         return
     }
@@ -472,7 +494,7 @@ private fun SecurityCategory(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { showChange = true }
+                .clickable { onChangingSecretChange(true) }
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -1210,16 +1232,7 @@ private fun TestsAndLogsCategory(
     content: @Composable () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scrollState = remember {
-        ScrollState(initial = SettingsSession.lastTestsAndLogsScrollPx)
-    }
-    DisposableEffect(scrollState) {
-        onDispose {
-            SettingsSession.lastTestsAndLogsScrollPx = scrollState.value
-        }
-    }
-
-    SettingsScrollColumn(modifier = modifier, state = scrollState) {
+    SettingsScrollColumn(modifier = modifier) {
         SwitchRow(
             title = stringResource(R.string.settings_logs_logging_title),
             subtitle = stringResource(R.string.settings_logs_logging_subtitle),

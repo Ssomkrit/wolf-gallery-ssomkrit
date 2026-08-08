@@ -35,7 +35,7 @@
 
     <string name="selection_cancel">Cancelar selección</string>
 
-    <string name="album_default_imported_name">Importados</string>
+    <string name="album_default_imported_name">Descargas</string>
 
     <string name="tab_all">Todo</string>
     <string name="tab_albums">Álbumes</string>
@@ -58,6 +58,7 @@
     <string name="export_done_single">Exportado al dispositivo</string>
     <string name="export_done_multi">Exportados %1$d de %2$d</string>
     <string name="export_failed">No se pudo exportar al dispositivo</string>
+    <string name="export_group_empty">Este grupo no tiene archivos multimedia para exportar</string>
     <string name="export_progress_title">Exportando al dispositivo</string>
 
     <string name="import_folder_default_name">Importación</string>

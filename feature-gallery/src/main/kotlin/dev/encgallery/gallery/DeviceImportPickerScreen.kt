@@ -69,7 +69,7 @@ fun DeviceImportPickerScreen(
 ) {
     BackHandler { onCancel() }
     var selectedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    val gridState = rememberLazyGridState()
+    val gridState = rememberSavedGridState("device-import-picker")
 
     val tileCornerShape = RoundedCornerShape(
         when {

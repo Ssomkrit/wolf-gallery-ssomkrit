@@ -29,19 +29,128 @@ object ThumbnailLoader {
 
     internal fun <T> gated(block: () -> T): T = withKeystoreGate(block)
 
-    private const val CACHE_BUDGET_BYTES = 128 * 1024 * 1024
+    private const val CACHE_BUDGET_BYTES = 96 * 1024 * 1024
+
+    private const val COVER_CACHE_BUDGET_BYTES = 64 * 1024 * 1024
+
+    private const val COVER_CACHE_MAX_BYTES = 384 * 1024 * 1024
+
+    private const val COVER_CACHE_MIN_BYTES = 32 * 1024 * 1024
+
+    private const val GRID_CACHE_MAX_BYTES = 192 * 1024 * 1024
+
+    private const val GRID_CACHE_MIN_BYTES = 24 * 1024 * 1024
 
     const val GRID_DISPLAY_PX = 512
 
     private fun gridKey(uuid: String): String = "$uuid@g"
 
+    private fun coverEntryKey(uuid: String): String = "coverentry:$uuid"
+
+    private fun albumCoverKey(albumUuid: String, gridSized: Boolean): String =
+        if (gridSized) "cover:$albumUuid@g" else "cover:$albumUuid"
+
     private val cache = object : LruCache<String, Bitmap>(CACHE_BUDGET_BYTES) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
 
+    private val coverCache = object : LruCache<String, Bitmap>(COVER_CACHE_BUDGET_BYTES) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
+
+    fun configure(context: Context) {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+            ?: return
+        val info = android.app.ActivityManager.MemoryInfo()
+        am.getMemoryInfo(info)
+        val totalBytes = info.totalMem
+
+        val coverBudget = (totalBytes / 42L)
+            .coerceIn(COVER_CACHE_MIN_BYTES.toLong(), COVER_CACHE_MAX_BYTES.toLong())
+            .toInt()
+        val gridBudget = (totalBytes / 84L)
+            .coerceIn(GRID_CACHE_MIN_BYTES.toLong(), GRID_CACHE_MAX_BYTES.toLong())
+            .toInt()
+
+        coverCache.resize(coverBudget)
+        cache.resize(gridBudget)
+        EncLog.i(
+            TAG,
+            "cache budgets: covers=${coverBudget / (1024 * 1024)}MiB grid=${gridBudget / (1024 * 1024)}MiB " +
+                "(device RAM ${totalBytes / (1024 * 1024)}MiB)"
+        )
+    }
+
+    fun onTrimMemory(level: Int) {
+        val before = cache.size() + coverCache.size()
+        val action = when (level) {
+
+            android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN -> {
+                cache.trimToSize(GRID_CACHE_MIN_BYTES)
+                coverCache.trimToSize(COVER_CACHE_MIN_BYTES)
+                "trimmed to floor (ui hidden)"
+            }
+
+            android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE,
+            android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> {
+                cache.trimToSize(cache.maxSize() / 2)
+                "grid halved"
+            }
+
+            android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> {
+                cache.evictAll()
+                coverCache.trimToSize(coverCache.maxSize() / 2)
+                "grid dropped, covers halved"
+            }
+
+            android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND -> {
+                cache.trimToSize(cache.maxSize() / 2)
+                "grid halved (backgrounded)"
+            }
+
+            android.content.ComponentCallbacks2.TRIM_MEMORY_MODERATE -> {
+                cache.evictAll()
+                coverCache.trimToSize(coverCache.maxSize() / 2)
+                "grid dropped, covers halved (backgrounded)"
+            }
+
+            android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
+                cache.evictAll()
+                coverCache.evictAll()
+                "all dropped (kill candidate)"
+            }
+
+            else -> "ignored"
+        }
+        val freed = (before - cache.size() - coverCache.size()) / (1024 * 1024)
+        EncLog.d(TAG, "trimMemory($level): $action, freed ${freed}MiB")
+    }
+
     fun clearCache() {
         cache.evictAll()
+        coverCache.evictAll()
         EncLog.d(TAG, "cache cleared")
+    }
+
+    fun peekAlbumCover(albumUuid: String, gridSized: Boolean = false): Bitmap? =
+        coverCache.get(albumCoverKey(albumUuid, gridSized))
+
+    fun peekCoverEntry(entryUuid: String): Bitmap? = coverCache.get(coverEntryKey(entryUuid))
+
+    fun loadCoverEntry(
+        context: Context,
+        entry: VaultEntry,
+        keystore: KeystoreAesGcm
+    ): Bitmap? {
+        val key = coverEntryKey(entry.uuid)
+        coverCache.get(key)?.let { return it }
+
+        val jpegBytes = withKeystoreGate {
+            ensureThumbBytes(context, entry, keystore, forceRegen = false)
+        } ?: return null
+        val bitmap = ThumbnailFactory.decodeJpeg(jpegBytes) ?: return null
+        coverCache.put(key, bitmap)
+        return bitmap
     }
 
     fun loadOrGenerate(
@@ -127,6 +236,7 @@ object ThumbnailLoader {
     fun forget(uuid: String) {
         cache.remove(uuid)
         cache.remove(gridKey(uuid))
+        coverCache.remove(coverEntryKey(uuid))
     }
 
     fun loadAlbumCover(
@@ -135,8 +245,8 @@ object ThumbnailLoader {
         keystore: KeystoreAesGcm,
         gridSized: Boolean = false
     ): Bitmap? {
-        val key = if (gridSized) "cover:$albumUuid@g" else "cover:$albumUuid"
-        cache.get(key)?.let { return it }
+        val key = albumCoverKey(albumUuid, gridSized)
+        coverCache.get(key)?.let { return it }
 
         val coverFile = VaultPaths.albumCoverThumbFile(context, albumUuid)
         if (!coverFile.exists()) return null
@@ -153,13 +263,13 @@ object ThumbnailLoader {
 
         val maxEdge = if (gridSized) GRID_DISPLAY_PX else Int.MAX_VALUE
         val bitmap = ThumbnailFactory.decodeJpeg(jpegBytes, maxEdge) ?: return null
-        cache.put(key, bitmap)
+        coverCache.put(key, bitmap)
         return bitmap
     }
 
     fun forgetAlbumCover(albumUuid: String) {
-        cache.remove("cover:$albumUuid")
-        cache.remove("cover:$albumUuid@g")
+        coverCache.remove("cover:$albumUuid")
+        coverCache.remove("cover:$albumUuid@g")
     }
 
     private fun decryptThumb(entry: VaultEntry, keystore: KeystoreAesGcm): ByteArray? = try {
@@ -207,8 +317,12 @@ object ThumbnailLoader {
         } else {
 
             trashAlbum.albumDir.listFiles { f ->
-                f.isFile && f.name.endsWith(VaultPaths.THUMB_SUFFIX)
-            }?.firstOrNull() ?: return null
+                f.isFile && f.name.endsWith(VaultPaths.BLOB_SUFFIX)
+            }
+                ?.sortedByDescending { it.lastModified() }
+                ?.firstNotNullOfOrNull { blob ->
+                    VaultPaths.thumbForBlob(blob).takeIf { it.exists() }
+                } ?: return null
         }
 
         val jpegBytes = try {

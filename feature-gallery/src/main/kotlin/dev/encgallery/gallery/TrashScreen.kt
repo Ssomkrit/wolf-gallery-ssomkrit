@@ -139,67 +139,46 @@ fun TrashScreen(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            if (inSelectionMode) {
-                                val selectedRecords = records.filter { it.uuid in selectedUuids }
-                                Text(
-                                    text = pluralStringResource(
-                                        selCountRes(trashRecordKind(selectedRecords)),
-                                        selectedRecords.size,
-                                        selectedRecords.size
-                                    ),
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            } else {
-                                Text(
-                                    text = stringResource(R.string.trash_screen_title),
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = pluralStringResource(
-                                        trashScreenCountRes(trashRecordKind(records)),
-                                        records.size,
-                                        records.size
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = if (inSelectionMode) clearSelection else onClose
-                        ) {
-                            ThemedIcon(
-                                vector = if (inSelectionMode) {
-                                    Icons.Default.Close
-                                } else {
-                                    Icons.Default.ArrowBack
-                                },
-                                contentDescription = stringResource(
-                                    if (inSelectionMode) R.string.trash_sel_cancel
-                                    else R.string.trash_screen_back
-                                )
+                val selectedRecords = if (inSelectionMode) {
+                    records.filter { it.uuid in selectedUuids }
+                } else {
+                    emptyList()
+                }
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    DrillDownHeader(
+                        title = if (inSelectionMode) {
+                            pluralStringResource(
+                                selCountRes(trashRecordKind(selectedRecords)),
+                                selectedRecords.size,
+                                selectedRecords.size
                             )
+                        } else {
+                            stringResource(R.string.trash_screen_title)
+                        },
+                        subtitle = if (inSelectionMode) {
+                            null
+                        } else {
+                            pluralStringResource(
+                                trashScreenCountRes(trashRecordKind(records)),
+                                records.size,
+                                records.size
+                            )
+                        },
+                        backContentDescription = stringResource(
+                            if (inSelectionMode) R.string.trash_sel_cancel
+                            else R.string.trash_screen_back
+                        ),
+                        onBack = if (inSelectionMode) clearSelection else onClose,
+                        backIcon = if (inSelectionMode) {
+                            Icons.Default.Close
+                        } else {
+                            Icons.Default.ArrowBack
                         }
-                    },
-                    actions = {},
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                )
+                }
             }
         ) { innerPadding ->
-            val trashGridState = rememberLazyGridState()
+            val trashGridState = rememberSavedGridState("trash")
             Box(
                 modifier = Modifier
                     .fillMaxSize()

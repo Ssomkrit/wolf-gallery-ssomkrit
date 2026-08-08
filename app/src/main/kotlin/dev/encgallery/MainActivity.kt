@@ -15,6 +15,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +28,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
@@ -50,7 +56,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -78,6 +83,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -128,6 +134,7 @@ import dev.encgallery.gallery.FileConflictRequest
 import dev.encgallery.gallery.FileConflictResolution
 import dev.encgallery.gallery.EntryPickerOp
 import dev.encgallery.gallery.AlbumExportBundle
+import dev.encgallery.gallery.GroupExportBundle
 import dev.encgallery.gallery.EntryExport
 import dev.encgallery.gallery.EntryShare
 import dev.encgallery.gallery.FullScreenViewer
@@ -187,6 +194,27 @@ import dev.encgallery.ui.theme.LocalTabRowColor
 import androidx.compose.ui.graphics.isSpecified
 
 private var autoPurgeRanThisProcess: Boolean = false
+
+private val TOP_BAR_HEIGHT = 64.dp
+
+private val SEARCH_FIELD_HEIGHT = 52.dp
+
+private val SEARCH_FIELD_BORDER = 2.dp
+
+private val SEARCH_FIELD_SHAPE = RoundedCornerShape(4.dp)
+
+private val SEARCH_TRAILING_SLOT = 48.dp
+
+private data class BucketImportPlan(
+    val bucket: DeviceBucket,
+    val albumName: String,
+    val mergeIntoUuid: String?
+)
+
+private data class MergeRollbackPoint(
+    val albumUuid: String,
+    val uuidsBefore: Set<String>
+)
 
 class MainActivity : ComponentActivity() {
 
@@ -731,7 +759,10 @@ private fun SkeletonContent(
     }
 
     var entrySourcePickerDestAlbumUuid by remember {
-        mutableStateOf<String?>(null)
+        mutableStateOf(GallerySession.lastEntrySourcePickerAlbumUuid)
+    }
+    LaunchedEffect(entrySourcePickerDestAlbumUuid) {
+        GallerySession.lastEntrySourcePickerAlbumUuid = entrySourcePickerDestAlbumUuid
     }
 
     var operationProgress by remember { mutableStateOf<OperationProgress?>(null) }
@@ -880,6 +911,18 @@ private fun SkeletonContent(
                 AppSettings.albumSortOrderFor("ROOT")
             )
 
+            val system = sorted.find { it.meta.uuid == VaultPaths.IMPORTED_ALBUM_UUID }
+                ?.let { it.copy(meta = it.meta.copy(name = importedAlbumName)) }
+            if (system == null) sorted
+            else listOf(system) + sorted.filterNot { it.meta.uuid == VaultPaths.IMPORTED_ALBUM_UUID }
+        }
+
+    val sortedAllAlbums: List<AlbumSummary> =
+        remember(albumSummaries, albumSortRevision, albumSortOrderState, importedAlbumName) {
+            val sorted = sortAlbumSummaries(
+                albumSummaries,
+                AppSettings.albumSortOrderFor("ROOT")
+            )
             val system = sorted.find { it.meta.uuid == VaultPaths.IMPORTED_ALBUM_UUID }
                 ?.let { it.copy(meta = it.meta.copy(name = importedAlbumName)) }
             if (system == null) sorted
@@ -1328,15 +1371,19 @@ private fun SkeletonContent(
         }
     }
 
-    val askAlbumConflict: suspend (String, String, Boolean, (String) -> Boolean) -> FileConflictResolution =
-        { albumName, suggested, intoGroup, nameTaken ->
+    val askAlbumConflict: suspend (String, String, Boolean, Boolean, (String) -> Boolean) -> FileConflictResolution =
+        { albumName, suggested, intoGroup, replaceAllowed, nameTaken ->
             val def = CompletableDeferred<FileConflictResolution>()
             withContext(Dispatchers.Main) {
-                albumConflict = AlbumConflictRequest(albumName, suggested, intoGroup, nameTaken, def)
+                albumConflict = AlbumConflictRequest(
+                    albumName, suggested, intoGroup, replaceAllowed, nameTaken, def
+                )
             }
-            val decision = def.await()
-            withContext(Dispatchers.Main) { albumConflict = null }
-            decision
+            try {
+                def.await()
+            } finally {
+                withContext(NonCancellable + Dispatchers.Main) { albumConflict = null }
+            }
         }
 
     val handleAlbumDestinationPicked: (String?) -> Unit = { destGroupUuid ->
@@ -1358,12 +1405,15 @@ private fun SkeletonContent(
                         val destGroup = groupsRepo.listGroups(appCtx)
                             .find { it.uuid == destGroupUuid }
                         val nameToUuid = HashMap<String, String>()
+                        val systemNames = HashSet<String>()
                         destGroup?.albumUuids?.forEach { aid ->
                             albumsRepo.getAlbum(appCtx, aid)?.name?.let { nm ->
-                                nameToUuid[nm.trim().lowercase()] = aid
+                                val key = nm.trim().lowercase()
+                                if (aid == VaultPaths.IMPORTED_ALBUM_UUID) systemNames.add(key)
+                                else nameToUuid[key] = aid
                             }
                         }
-                        val taken = nameToUuid.keys.toMutableSet()
+                        val taken = (nameToUuid.keys + systemNames).toMutableSet()
                         val nameTaken: (String) -> Boolean =
                             { c -> taken.contains(c.trim().lowercase()) }
                         val toAdd = ArrayList<String>()
@@ -1386,7 +1436,9 @@ private fun SkeletonContent(
                                 choice = pinned
                             } else {
                                 val suggested = nextFreeConflictName(nm, taken)
-                                val res = askAlbumConflict(nm, suggested, true, nameTaken)
+                                val res = askAlbumConflict(
+                                    nm, suggested, true, nameToUuid.containsKey(key), nameTaken
+                                )
 
                                 if (res.applyToAll &&
                                     res.choice != FileConflictChoice.CANCEL
@@ -1399,12 +1451,42 @@ private fun SkeletonContent(
                             when (choice) {
                                 FileConflictChoice.CANCEL -> return@withContext
                                 FileConflictChoice.SKIP -> {   }
-                                FileConflictChoice.REPLACE -> {
-                                    nameToUuid[key]?.let { existing ->
-                                        groupsRepo.ungroupAlbums(appCtx, listOf(existing))
-                                        albumsRepo.deletePermanently(appCtx, existing)
+                                FileConflictChoice.REPLACE, FileConflictChoice.MERGE -> {
+                                    val existing = nameToUuid[key]
+                                    if (existing == null) {
+                                        val finalName = nextFreeConflictName(nm, taken)
+                                        albumsRepo.rename(appCtx, uuid, finalName)
+                                        taken.add(finalName.trim().lowercase())
+                                        toAdd.add(uuid)
+                                        EncLog.w(
+                                            "MainActivity",
+                                            "group add: merge requested for a system album — kept as '$finalName' instead"
+                                        )
+                                    } else {
+                                        val incoming = VaultIndex.listEntriesInAlbum(appCtx, uuid)
+                                        val moved = incoming.count { entry ->
+                                            EntryOps.moveEntry(appCtx, entry, existing)
+                                        }
+                                        val leftBehind =
+                                            VaultIndex.listEntriesInAlbum(appCtx, uuid).size
+                                        if (leftBehind == 0) {
+                                            albumsRepo.deletePermanently(appCtx, uuid)
+                                        } else {
+                                            val finalName = nextFreeConflictName(nm, taken)
+                                            albumsRepo.rename(appCtx, uuid, finalName)
+                                            taken.add(finalName.trim().lowercase())
+                                            toAdd.add(uuid)
+                                            EncLog.w(
+                                                "MainActivity",
+                                                "group add: merge of '$nm' left $leftBehind file(s) behind — kept as '$finalName'"
+                                            )
+                                        }
+                                        EncLog.i(
+                                            "MainActivity",
+                                            "group add: merged album '$nm' into the one already in the group " +
+                                                "($moved of ${incoming.size} file(s) moved)"
+                                        )
                                     }
-                                    toAdd.add(uuid)
                                 }
                                 FileConflictChoice.RENAME -> {
                                     val finalName = typedName?.takeIf { it.isNotBlank() }
@@ -1661,6 +1743,7 @@ private fun SkeletonContent(
     var folderImportPaused by remember { mutableStateOf(false) }
     val cancelFolderImport: () -> Unit = {
         folderImportPaused = false
+        ImportController.folderImportUserCancelled = true
         folderImportJob?.cancel()
     }
     val toggleFolderImportPause: () -> Unit = { folderImportPaused = !folderImportPaused }
@@ -1704,6 +1787,8 @@ private fun SkeletonContent(
 
     var pendingExportAlbums by remember { mutableStateOf<List<AlbumExportBundle>>(emptyList()) }
 
+    var pendingExportGroup by remember { mutableStateOf<GroupExportBundle?>(null) }
+
     val runTreeExport: (List<VaultEntry>, Uri) -> Unit = { items, treeUri ->
         exportPaused = false
         exportJob = scope.launch {
@@ -1736,6 +1821,31 @@ private fun SkeletonContent(
             val (ok, total) = try {
                 EntryExport.exportAlbumsToTree(
                     context, bundles, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                ) { done, tot ->
+                    operationProgress = exportProgress(done, tot)
+                    while (exportPaused) delay(150)
+                }
+            } finally {
+                exportPaused = false
+                operationProgress = null
+            }
+            val msg = if (ok == 0) {
+                context.getString(R.string.export_failed)
+            } else {
+                context.getString(R.string.export_done_multi, ok, total)
+            }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val runGroupExport: (GroupExportBundle, Uri) -> Unit = { bundle, treeUri ->
+        exportPaused = false
+        exportJob = scope.launch {
+            val grandTotal = bundle.albums.sumOf { it.entries.size }
+            operationProgress = exportProgress(0, grandTotal)
+            val (ok, total) = try {
+                EntryExport.exportGroupToTree(
+                    context, bundle, treeUri, KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
                 ) { done, tot ->
                     operationProgress = exportProgress(done, tot)
                     while (exportPaused) delay(150)
@@ -1818,7 +1928,22 @@ private fun SkeletonContent(
         }
     }
 
-    var importPickerVisible by remember { mutableStateOf(false) }
+    val exportGroupTreeLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { treeUri: Uri? ->
+        val bundle = pendingExportGroup
+        pendingExportGroup = null
+        if (treeUri != null && bundle != null) {
+            runGroupExport(bundle, treeUri)
+        }
+    }
+
+    var importPickerVisible by remember {
+        mutableStateOf(GallerySession.lastImportPickerVisible)
+    }
+    LaunchedEffect(importPickerVisible) {
+        GallerySession.lastImportPickerVisible = importPickerVisible
+    }
     var importBuckets by remember { mutableStateOf<List<DeviceBucket>?>(null) }
 
     val mediaReadPerms = remember {
@@ -1836,6 +1961,12 @@ private fun SkeletonContent(
         importBuckets = null
         importPickerVisible = true
         scope.launch {
+            importBuckets = DeviceMediaBuckets.listBuckets(context.applicationContext)
+        }
+    }
+
+    LaunchedEffect(importPickerVisible) {
+        if (importPickerVisible && importBuckets == null) {
             importBuckets = DeviceMediaBuckets.listBuckets(context.applicationContext)
         }
     }
@@ -1858,23 +1989,136 @@ private fun SkeletonContent(
     val handleImportBuckets: (List<DeviceBucket>) -> Unit = { chosen ->
         if (chosen.isNotEmpty()) {
             folderImportPaused = false
+            ImportController.folderImportUserCancelled = false
+            val existingTopLevel = topLevelAlbums
+                .filterNot { it.meta.uuid == VaultPaths.IMPORTED_ALBUM_UUID }
+                .map { it.meta.name to it.meta.uuid }
+            val systemAlbumName = topLevelAlbums
+                .find { it.meta.uuid == VaultPaths.IMPORTED_ALBUM_UUID }?.meta?.name
             folderImportJob = scope.launch {
                 val appCtx = context.applicationContext
-                val grandTotal = chosen.sumOf { it.count }
+                val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+
+                val nameToUuid = HashMap<String, String>()
+                existingTopLevel.forEach { (nm, uuid) ->
+                    nameToUuid[nm.trim().lowercase()] = uuid
+                }
+                val taken = nameToUuid.keys.toMutableSet()
+                systemAlbumName?.let { taken.add(it.trim().lowercase()) }
+                val nameTaken: (String) -> Boolean = { c -> taken.contains(c.trim().lowercase()) }
+
+                val plan = ArrayList<BucketImportPlan>()
+                var blanket: FileConflictChoice? = null
+                var cancelledWhilePlanning = false
+                for (bucket in chosen) {
+                    val key = bucket.name.trim().lowercase()
+                    if (!taken.contains(key)) {
+                        taken.add(key)
+                        plan.add(BucketImportPlan(bucket, bucket.name, null))
+                        continue
+                    }
+                    val choice: FileConflictChoice
+                    var typedName: String? = null
+                    val pinned = blanket
+                    if (pinned != null) {
+                        choice = pinned
+                    } else {
+                        val suggested = nextFreeConflictName(bucket.name, taken)
+                        val res = askAlbumConflict(
+                            bucket.name, suggested, false, nameToUuid.containsKey(key), nameTaken
+                        )
+                        if (res.applyToAll && res.choice != FileConflictChoice.CANCEL) {
+                            blanket = res.choice
+                        }
+                        choice = res.choice
+                        typedName = res.newName
+                    }
+                    when (choice) {
+                        FileConflictChoice.CANCEL -> {
+                            cancelledWhilePlanning = true
+                        }
+                        FileConflictChoice.SKIP -> Unit
+                        FileConflictChoice.REPLACE, FileConflictChoice.MERGE -> {
+                            val existing = nameToUuid[key]
+                            if (existing != null) {
+                                plan.add(BucketImportPlan(bucket, bucket.name, existing))
+                            } else {
+                                val fallback = nextFreeConflictName(bucket.name, taken)
+                                taken.add(fallback.trim().lowercase())
+                                plan.add(BucketImportPlan(bucket, fallback, null))
+                                EncLog.w(
+                                    "MainActivity",
+                                    "folder import: merge requested for a system album — imported as '$fallback' instead"
+                                )
+                            }
+                        }
+                        FileConflictChoice.RENAME -> {
+                            val finalName = typedName?.takeIf { it.isNotBlank() }
+                                ?: nextFreeConflictName(bucket.name, taken)
+                            taken.add(finalName.trim().lowercase())
+                            plan.add(BucketImportPlan(bucket, finalName, null))
+                        }
+                    }
+                    if (cancelledWhilePlanning) break
+                }
+
+                val skipped = chosen.size - plan.size
+                if (skipped > 0 || plan.isNotEmpty()) {
+                    EncLog.i(
+                        "MainActivity",
+                        "folder import plan: ${plan.size} folder(s) to import, $skipped skipped, " +
+                            "${plan.count { it.mergeIntoUuid != null }} merging into an existing album" +
+                            if (cancelledWhilePlanning) " (cancelled at the name dialog)" else ""
+                    )
+                }
+                if (cancelledWhilePlanning || plan.isEmpty()) {
+                    operationProgress = null
+                    ImportController.folderImportUserCancelled = false
+                    folderImportPaused = false
+                    if (!cancelledWhilePlanning) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.import_folder_done, 0, 0),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    return@launch
+                }
+
+                val grandTotal = plan.sumOf { it.bucket.count }
                 var processed = 0
                 var okCount = 0
-                val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
                 val createdAlbums = mutableListOf<String>()
+                val mergePoints = mutableListOf<MergeRollbackPoint>()
                 try {
-                    for (bucket in chosen) {
-                        val title = String.format(importTitleTemplate, bucket.name)
-                        operationProgress = folderImportProgress(bucket.name, processed, grandTotal, title)
+                    for (item in plan) {
+                        val bucket = item.bucket
+                        val title = String.format(importTitleTemplate, item.albumName)
+                        operationProgress =
+                            folderImportProgress(item.albumName, processed, grandTotal, title)
                         val uris = DeviceMediaBuckets.bucketItemUris(appCtx, bucket.id)
                         if (uris.isEmpty()) continue
                         val albumUuid = withContext(Dispatchers.IO) {
-                            AlbumsRepository(keystore).create(appCtx, bucket.name).uuid
+                            val target = item.mergeIntoUuid
+                            if (target == null) {
+                                AlbumsRepository(keystore).create(appCtx, item.albumName).uuid
+                                    .also { createdAlbums.add(it) }
+                            } else {
+                                mergePoints.add(
+                                    MergeRollbackPoint(
+                                        albumUuid = target,
+                                        uuidsBefore = VaultIndex.listEntriesInAlbum(appCtx, target)
+                                            .map { it.uuid }
+                                            .toSet()
+                                    )
+                                )
+                                EncLog.i(
+                                    "MainActivity",
+                                    "folder import: merging '${bucket.name}' into existing album '${item.albumName}'"
+                                )
+                                target
+                            }
                         }
-                        createdAlbums.add(albumUuid)
                         withContext(Dispatchers.IO) {
                             PhotoImporter(keystore).importAll(
                                 context = appCtx,
@@ -1892,7 +2136,7 @@ private fun SkeletonContent(
                                     prog is PhotoImporter.Progress.FileFailed
                                 ) {
                                     operationProgress =
-                                        folderImportProgress(bucket.name, processed, grandTotal, title)
+                                        folderImportProgress(item.albumName, processed, grandTotal, title)
                                 }
                                 if (prog is PhotoImporter.Progress.FileStarted) {
                                     while (folderImportPaused) delay(150)
@@ -1901,18 +2145,41 @@ private fun SkeletonContent(
                         }
                     }
                 } catch (e: kotlinx.coroutines.CancellationException) {
-                    withContext(NonCancellable + Dispatchers.IO) {
-                        val repo = AlbumsRepository(keystore)
-                        createdAlbums.forEach { uuid ->
-                            repo.deletePermanently(appCtx, uuid)
+                    if (ImportController.folderImportUserCancelled) {
+                        var mergedBack = 0
+                        withContext(NonCancellable + Dispatchers.IO) {
+                            val repo = AlbumsRepository(keystore)
+                            createdAlbums.forEach { uuid ->
+                                repo.deletePermanently(appCtx, uuid)
+                            }
+                            mergePoints.forEach { point ->
+                                VaultIndex.listEntriesInAlbum(appCtx, point.albumUuid)
+                                    .filterNot { it.uuid in point.uuidsBefore }
+                                    .forEach { landed ->
+                                        EntriesRepository(keystore).deleteMeta(landed.blobFile)
+                                        deleteEntryOnDisk(landed)
+                                        GallerySession.entryFilenameCache.remove(landed.uuid)
+                                        GallerySession.infoProbeCache.remove(landed.uuid)
+                                        mergedBack++
+                                    }
+                            }
+                            if (mergedBack > 0) GallerySession.entryFilenameCacheRevision++
                         }
+                        EncLog.i(
+                            "MainActivity",
+                            "folder import cancelled by user — removed ${createdAlbums.size} album(s) created by this batch, " +
+                                "rolled back $mergedBack file(s) merged into ${mergePoints.size} existing album(s)"
+                        )
+                    } else {
+                        EncLog.i(
+                            "MainActivity",
+                            "folder import interrupted (lock or teardown, not user cancel) — " +
+                                "kept ${createdAlbums.size} album(s), $okCount of $grandTotal file(s) already imported"
+                        )
                     }
-                    EncLog.i(
-                        "MainActivity",
-                        "folder import cancelled — removed ${createdAlbums.size} album(s) created by this batch"
-                    )
                     throw e
                 } finally {
+                    ImportController.folderImportUserCancelled = false
                     folderImportPaused = false
                     operationProgress = null
                     refreshTrigger++
@@ -1975,6 +2242,34 @@ private fun SkeletonContent(
                         pendingExportAlbums = bundles
                         exportAlbumsTreeLauncher.launch(null)
                     }
+                }
+            }
+        }
+    }
+
+    val handleExportGroup: (dev.encgallery.gallery.AlbumGroupMeta) -> Unit = { groupMeta ->
+        val orderedAlbums = sortedAlbumGroups
+            .find { it.meta.uuid == groupMeta.uuid }
+            ?.albums?.map { it.meta }
+            ?: emptyList()
+        scope.launch {
+            val albumBundles = withContext(Dispatchers.IO) {
+                val appCtx = context.applicationContext
+                orderedAlbums.mapNotNull { meta ->
+                    val items = VaultIndex.listEntriesInAlbum(appCtx, meta.uuid)
+                    if (items.isEmpty()) null else AlbumExportBundle(meta.name, items)
+                }
+            }
+            if (albumBundles.isEmpty()) {
+                Toast.makeText(context, R.string.export_group_empty, Toast.LENGTH_SHORT).show()
+            } else {
+                val bundle = GroupExportBundle(groupMeta.name, albumBundles)
+                val folder = fixedExportFolder()
+                if (folder != null) {
+                    runGroupExport(bundle, folder)
+                } else {
+                    pendingExportGroup = bundle
+                    exportGroupTreeLauncher.launch(null)
                 }
             }
         }
@@ -2106,10 +2401,13 @@ private fun SkeletonContent(
         ) {
 
             if (searchActive) {
+                val searchInteraction = remember { MutableInteractionSource() }
+                val searchFocused by searchInteraction.collectIsFocusedAsState()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                        .height(TOP_BAR_HEIGHT)
+                        .padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = {
@@ -2122,15 +2420,50 @@ private fun SkeletonContent(
                             contentDescription = stringResource(R.string.search_close)
                         )
                     }
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        placeholder = {
-                            Text(stringResource(R.string.search_field_hint))
-                        },
-                        trailingIcon = {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(SEARCH_FIELD_HEIGHT)
+                            .border(
+                                width = SEARCH_FIELD_BORDER,
+                                color = if (searchFocused) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outline
+                                },
+                                shape = SEARCH_FIELD_SHAPE
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (searchQuery.isEmpty()) {
+                                Text(
+                                    text = stringResource(R.string.search_field_hint),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                interactionSource = searchInteraction,
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
+                            )
+                        }
+                        Box(
+                            modifier = Modifier.size(SEARCH_TRAILING_SLOT),
+                            contentAlignment = Alignment.Center
+                        ) {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
                                     ThemedIcon(
@@ -2141,7 +2474,7 @@ private fun SkeletonContent(
                                 }
                             }
                         }
-                    )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 BackHandler(enabled = true) {
@@ -2151,7 +2484,8 @@ private fun SkeletonContent(
             } else Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                    .height(TOP_BAR_HEIGHT)
+                    .padding(start = 16.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
@@ -2482,7 +2816,14 @@ private fun SkeletonContent(
                                         refreshTrigger++
                                     }
                                 },
-                                onOpen = { meta -> openedAlbumUuid = meta.uuid },
+                                onOpen = { meta ->
+
+                                    if (searchActive) {
+                                        searchActive = false
+                                        searchQuery = ""
+                                    }
+                                    openedAlbumUuid = meta.uuid
+                                },
                                 onOpenGroup = { groupUuid ->
                                     openedGroupUuid = groupUuid
                                 },
@@ -2492,6 +2833,7 @@ private fun SkeletonContent(
                                 onMoveAlbumsRequest = handleAlbumMoveRequest,
                                 onDeleteAlbumsSelection = handleDeleteAlbumsSelection,
                                 onExportAlbums = handleExportAlbums,
+                                onExportGroup = handleExportGroup,
                                 onRenameGroup = handleRenameGroup,
                                 onDeleteGroup = handleDeleteGroup,
                                 onSetAlbumsPinned = handleSetAlbumsPinned,
@@ -2602,7 +2944,7 @@ private fun SkeletonContent(
             EntryDestinationPickerScreen(
                 op = entryPickerOp,
                 selectionCount = entryPickerSelection.size,
-                albums = albumSummaries,
+                albums = sortedAllAlbums,
                 groups = sortedAlbumGroups,
                 columns = AppSettings.albumColumns.value,
                 tileShape = AppSettings.albumTileShape.value,
@@ -2679,7 +3021,7 @@ private fun SkeletonContent(
         if (loaded && albumPickerOp != AlbumPickerOp.NONE) {
             GroupDestinationPickerScreen(
                 selectionCount = albumPickerSelection.size,
-                albums = albumSummaries,
+                albums = sortedAllAlbums,
                 groups = sortedAlbumGroups,
                 columns = AppSettings.albumColumns.value,
                 tileShape = AppSettings.albumTileShape.value,
@@ -2703,7 +3045,7 @@ private fun SkeletonContent(
                 EntrySourcePickerScreen(
                     destAlbumUuid = destUuid,
                     destAlbumName = destName,
-                    albums = albumSummaries,
+                    albums = sortedAllAlbums,
                     groups = sortedAlbumGroups,
                     allEntries = entries,
                     columns = AppSettings.albumColumns.value,
@@ -3044,6 +3386,8 @@ private fun lockVaultNow() {
     SessionState.unlocked.value = false
     dev.encgallery.crypto.VaultDataKey.wipe()
     dev.encgallery.gallery.ShareMemoryStore.clear()
+    dev.encgallery.gallery.GallerySession.lastViewerBitmap = null
+    ThumbnailLoader.clearCache()
 }
 
 @Composable

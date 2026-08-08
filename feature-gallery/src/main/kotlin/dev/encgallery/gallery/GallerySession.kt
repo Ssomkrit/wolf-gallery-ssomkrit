@@ -29,6 +29,11 @@ object GallerySession {
     val mosaicAspectRatios: MutableMap<String, Float> =
         java.util.concurrent.ConcurrentHashMap()
 
+    private val _mosaicAspectRevision = mutableIntStateOf(0)
+    var mosaicAspectRevision: Int
+        get() = _mosaicAspectRevision.intValue
+        set(value) { _mosaicAspectRevision.intValue = value }
+
     val entryIsVideo: MutableMap<String, Boolean> = mutableMapOf()
 
     var lastDevPanelScrollPx: Int = 0
@@ -213,7 +218,19 @@ object GallerySession {
 
     val infoProbeCache: MutableMap<String, EntryInfoProbe> = mutableMapOf()
 
+    val scrollAnchors: MutableMap<String, Pair<String, Int>> = mutableMapOf()
+
+    val listScrolls: MutableMap<String, Pair<Int, Int>> = mutableMapOf()
+
+    var lastImportPickerVisible: Boolean = false
+
+    var lastEntrySourcePickerAlbumUuid: String? = null
+
     fun reset() {
+        scrollAnchors.clear()
+        listScrolls.clear()
+        lastImportPickerVisible = false
+        lastEntrySourcePickerAlbumUuid = null
         lastViewingIndex = null
         lastGridFirstVisibleItem = 0
         lastGridFirstVisibleOffset = 0
@@ -222,6 +239,7 @@ object GallerySession {
         lastCoverPickerFirstVisibleItem = 0
         lastCoverPickerFirstVisibleOffset = 0
         mosaicAspectRatios.clear()
+        mosaicAspectRevision = 0
 
         MosaicAspectStore.resetLoaded()
         albumDetailGridScroll.clear()

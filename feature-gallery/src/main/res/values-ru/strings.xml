@@ -184,6 +184,8 @@
     <string name="group_action_delete">Удалить</string>
     <string name="group_action_pin">Закрепить</string>
     <string name="group_action_unpin">Открепить</string>
+    <string name="group_action_export">Экспортировать на устройство</string>
+    <string name="export_group_empty">В этой группе нет медиафайлов для экспорта</string>
     <string name="group_rename_dialog_title">Переименовать группу</string>
     <string name="group_delete_dialog_title">Удалить группу?</string>
     <string name="group_delete_dialog_body_empty">Пустая группа будет перемещена в Корзину. Можно восстановить в течение 30 дней.</string>
@@ -285,7 +287,10 @@
     <string name="search_clear">Очистить запрос</string>
     <string name="search_no_results">Ничего не найдено по запросу «%1$s»</string>
 
-    <string name="search_no_results_unnamed_hint">Файлы, импортированные до этой версии, не имеют сохранённого имени и не появляются в результатах. Переимпортируйте их, чтобы они стали искаться.</string>
+    <string name="search_hint_scope_media">Поиск идёт по именам медиафайлов. Медиафайл без сохранённого имени не находится — имя можно задать переименованием.</string>
+    <string name="search_hint_scope_album">Поиск идёт по именам медиафайлов этого альбома. Медиафайл без сохранённого имени не находится — имя можно задать переименованием.</string>
+    <string name="search_hint_scope_albums">Поиск идёт по названиям альбомов и групп. Медиафайлы внутри них здесь не ищутся — откройте альбом и повторите поиск в нём.</string>
+    <string name="search_hint_scope_group">Поиск идёт по названиям альбомов этой группы. Медиафайлы внутри них здесь не ищутся — откройте альбом и повторите поиск в нём.</string>
 
     <string name="albums_empty_state">Альбомов пока нет. Нажмите +, чтобы создать.</string>
     <string name="albums_create_fab">Создать альбом</string>
@@ -311,6 +316,9 @@
 
     <string name="album_conflict_title">Действие с альбомом</string>
     <string name="album_conflict_apply_all">Применить ко всем альбомам</string>
+    <string name="album_conflict_subtitle">Можно добавить файлы в существующий альбом или дать импорту другое имя.</string>
+    <string name="album_conflict_merge">Добавить в существующий альбом</string>
+    <string name="album_conflict_subtitle_system">Это собственный альбом приложения — переименуйте импорт или пропустите папку.</string>
 
     <string name="album_rename_dialog_title">Переименовать альбом</string>
     <string name="album_rename_btn_save">Сохранить</string>

@@ -26,6 +26,7 @@ class AlbumConflictRequest(
     val albumName: String,
     val suggestedName: String,
     val intoGroup: Boolean,
+    val mergeAllowed: Boolean,
     val nameTaken: (String) -> Boolean,
     val deferred: CompletableDeferred<FileConflictResolution>
 )
@@ -57,6 +58,7 @@ fun AlbumConflictFlow(request: AlbumConflictRequest) {
         AlbumConflictDialog(
             albumName = request.albumName,
             intoGroup = request.intoGroup,
+            mergeAllowed = request.mergeAllowed,
             onResolve = { res ->
 
                 if (res.choice == FileConflictChoice.RENAME && !res.applyToAll) renamePending = true
@@ -70,6 +72,7 @@ fun AlbumConflictFlow(request: AlbumConflictRequest) {
 fun AlbumConflictDialog(
     albumName: String,
     intoGroup: Boolean,
+    mergeAllowed: Boolean,
     onResolve: (FileConflictResolution) -> Unit
 ) {
     var applyToAll by remember { mutableStateOf(false) }
@@ -81,7 +84,10 @@ fun AlbumConflictDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = stringResource(R.string.file_conflict_subtitle),
+                    text = stringResource(
+                        if (mergeAllowed) R.string.album_conflict_subtitle
+                        else R.string.album_conflict_subtitle_system
+                    ),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -108,10 +114,12 @@ fun AlbumConflictDialog(
                     onClick = { onResolve(FileConflictResolution(FileConflictChoice.SKIP, applyToAll)) },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.file_conflict_skip)) }
-                TextButton(
-                    onClick = { onResolve(FileConflictResolution(FileConflictChoice.REPLACE, applyToAll)) },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text(stringResource(R.string.file_conflict_replace)) }
+                if (mergeAllowed) {
+                    TextButton(
+                        onClick = { onResolve(FileConflictResolution(FileConflictChoice.MERGE, applyToAll)) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(stringResource(R.string.album_conflict_merge)) }
+                }
                 TextButton(
                     onClick = { onResolve(FileConflictResolution(FileConflictChoice.RENAME, applyToAll)) },
                     modifier = Modifier.fillMaxWidth()

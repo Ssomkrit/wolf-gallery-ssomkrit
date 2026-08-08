@@ -74,7 +74,7 @@ object EntryConflictResolver {
                         EncLog.i(TAG, "batch $op cancelled at ${idx + 1}/$total")
                         return EntryBatchOutcome(renamed, removed)
                     }
-                    FileConflictChoice.SKIP -> {
+                    FileConflictChoice.SKIP, FileConflictChoice.MERGE -> {
 
                     }
                     FileConflictChoice.REPLACE -> {

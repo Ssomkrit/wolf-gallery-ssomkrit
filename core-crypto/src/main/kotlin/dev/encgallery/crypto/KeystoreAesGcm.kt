@@ -3,10 +3,11 @@ package dev.encgallery.crypto
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
-import android.security.keystore.StrongBoxUnavailableException
+import dev.encgallery.logging.EncLog
 import dev.encgallery.nativec.NativeCrypto
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -38,14 +39,24 @@ class KeystoreAesGcm(private val alias: String) {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
             context.packageManager.hasSystemFeature(
                 PackageManager.FEATURE_STRONGBOX_KEYSTORE
-            )
+            ) &&
+            !strongBoxRefusedThisBoot(context)
 
         if (strongBoxAvailable) {
             try {
                 generateKey(strongBox = true)
                 return inspectTier()
-            } catch (_: StrongBoxUnavailableException) {
-
+            } catch (t: Throwable) {
+                EncLog.w(
+                    TAG,
+                    "StrongBox key generation refused for '$alias': ${describeCauses(t)} — falling back to TEE"
+                )
+                rememberStrongBoxRefusal(context)
+                try {
+                    delete()
+                } catch (cleanup: Throwable) {
+                    EncLog.w(TAG, "could not drop half-created alias: ${cleanup.javaClass.simpleName}")
+                }
             }
         }
 
@@ -140,11 +151,50 @@ class KeystoreAesGcm(private val alias: String) {
         keystore.getKey(alias, null) as? SecretKey
             ?: error("key '$alias' is missing or not a SecretKey")
 
+    private fun strongBoxRefusedThisBoot(context: Context): Boolean {
+        val prefs = context.applicationContext
+            .getSharedPreferences(CAPS_PREFS, Context.MODE_PRIVATE)
+        val marked = prefs.getInt(KEY_STRONGBOX_REFUSED_BOOT, -1)
+        return marked >= 0 && marked == bootCount(context)
+    }
+
+    private fun rememberStrongBoxRefusal(context: Context) {
+        context.applicationContext
+            .getSharedPreferences(CAPS_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_STRONGBOX_REFUSED_BOOT, bootCount(context))
+            .apply()
+    }
+
+    private fun bootCount(context: Context): Int = try {
+        Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0)
+    } catch (_: Throwable) {
+        0
+    }
+
+    private fun describeCauses(t: Throwable): String {
+        val chain = StringBuilder()
+        var cur: Throwable? = t
+        var depth = 0
+        while (cur != null && depth < 4) {
+            if (depth > 0) chain.append(" <- ")
+            chain.append(cur.javaClass.simpleName)
+            cur.message?.takeIf { it.isNotBlank() }?.let { chain.append(": ").append(it) }
+            cur = cur.cause
+            depth++
+        }
+        return chain.toString()
+    }
+
     companion object {
 
         const val PRODUCTION_ALIAS = "enc_gallery_master_v1"
 
         private const val TEST_ALIAS = "enc_gallery_test_aes_v1"
+
+        private const val TAG = "KeystoreAesGcm"
+        private const val CAPS_PREFS = "enc_keystore_caps"
+        private const val KEY_STRONGBOX_REFUSED_BOOT = "strongbox_refused_boot"
 
         private const val PROVIDER = "AndroidKeyStore"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"

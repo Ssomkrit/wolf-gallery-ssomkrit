@@ -155,6 +155,8 @@
     <string name="group_action_delete">Eliminar</string>
     <string name="group_action_pin">Fijar</string>
     <string name="group_action_unpin">Dejar de fijar</string>
+    <string name="group_action_export">Exportar al dispositivo</string>
+    <string name="export_group_empty">Este grupo no tiene archivos multimedia para exportar</string>
     <string name="group_rename_dialog_title">Renombrar grupo</string>
     <string name="group_delete_dialog_title">¿Eliminar el grupo?</string>
     <string name="group_delete_dialog_body_empty">El grupo vacío se moverá a la papelera. Restaurable durante 30 días.</string>
@@ -249,7 +251,10 @@
     <string name="search_close">Cerrar búsqueda</string>
     <string name="search_clear">Borrar consulta</string>
     <string name="search_no_results">No se encontró nada para «%1$s»</string>
-    <string name="search_no_results_unnamed_hint">Los archivos importados antes de esta versión no tienen nombre guardado y no aparecen aquí. Vuelve a importarlos para poder buscarlos.</string>
+    <string name="search_hint_scope_media">La búsqueda usa los nombres de los archivos multimedia. Un archivo sin nombre guardado nunca aparece: asígnale uno cambiándole el nombre.</string>
+    <string name="search_hint_scope_album">La búsqueda usa los nombres de los archivos multimedia de este álbum. Un archivo sin nombre guardado nunca aparece: asígnale uno cambiándole el nombre.</string>
+    <string name="search_hint_scope_albums">La búsqueda usa los nombres de álbumes y grupos. Los archivos multimedia que contienen no se buscan aquí: abre un álbum y busca dentro.</string>
+    <string name="search_hint_scope_group">La búsqueda usa los nombres de los álbumes de este grupo. Los archivos multimedia que contienen no se buscan aquí: abre un álbum y busca dentro.</string>
 
     <string name="albums_empty_state">Aún no hay álbumes. Toca + para crear uno.</string>
     <string name="albums_create_fab">Crear álbum</string>
@@ -272,6 +277,9 @@
     <string name="entry_dup_in_album">Ya existe un archivo con este nombre en este álbum</string>
     <string name="album_conflict_title">Acción de álbum</string>
     <string name="album_conflict_apply_all">Aplicar a todos los álbumes</string>
+    <string name="album_conflict_subtitle">Añade los archivos al álbum existente o dale otro nombre a la importación.</string>
+    <string name="album_conflict_merge">Añadir al álbum existente</string>
+    <string name="album_conflict_subtitle_system">Es el álbum propio de la app: renombra la importación u omite la carpeta.</string>
 
     <string name="album_rename_dialog_title">Renombrar álbum</string>
     <string name="album_rename_btn_save">Guardar</string>

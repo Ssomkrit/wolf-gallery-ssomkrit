@@ -165,7 +165,7 @@ fun GalleryHost(
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = stringResource(R.string.search_no_results_unnamed_hint),
+                        text = stringResource(R.string.search_hint_scope_media),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -192,6 +192,7 @@ fun GalleryHost(
                 enlarged = enlarged,
                 mosaicState = mosaicState,
                 modifier = Modifier.weight(1f),
+                anchorKey = if (isSearching) null else "host",
                 gridHeightDp = null
             )
         }

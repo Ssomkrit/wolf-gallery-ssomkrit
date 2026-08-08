@@ -61,7 +61,8 @@ And this is only the beginning — **Wolf Gallery is actively evolving, with a l
 - **Search** — find groups, albums, and files by name.
 - **Pinning** — pin and unpin groups and albums to keep favorites within reach.
 - **Album covers** — set any picture as a cover and frame the exact part of it you want on display.
-- **Import & export** — bring files and albums in from the device, or send them back out — you decide where your media lives.
+- **Import & export** — bring files and albums in from the device, or send them back out — you decide where your media lives. A whole group can be exported in one go, as a folder with one subfolder per album.
+- **Name conflicts, your call** — importing a device folder whose name is already taken asks whether to skip it, add the files to the existing album, or import under a different name, before anything is decrypted.
 - **Share from the vault** — send any file to another app right from inside Wolf Gallery, with no need to drop it into open storage first.
 - **Set as wallpaper** — apply a picture to your home screen straight from the gallery.
 
@@ -86,7 +87,7 @@ And this is only the beginning — **Wolf Gallery is actively evolving, with a l
 - **Chunked streaming format** — each file is encrypted in 1 MiB chunks, every chunk carrying its own nonce and authentication tag, keyed per file and bound to the file header. Tampering is therefore caught at chunk granularity, and that covers reordering, duplicating or truncating chunks rather than only flipping a byte. Nothing is ever held whole in memory, so the size of a photo or video is no longer a limit on what the vault can take.
 - **No temporary plaintext copies** — a video plays straight out of the vault, chunk by chunk, as it is read. Earlier versions had to decrypt the whole file into a temporary plaintext file before playback could start; that file is gone. Exporting to your device is the only time a file leaves the vault in the clear, and only because you asked for it.
 - **Argon2id** key derivation — the memory-hard winner of the Password Hashing Competition. Your passphrase is stretched into a key that is expensive to brute-force on GPUs and ASICs; the key itself is never stored in plaintext.
-- **Hardware-backed keys** — the master key lives in the Android Keystore (StrongBox-backed where available), and AES runs on the CPU's hardware crypto extensions for speed.
+- **Hardware-backed keys** — the master key lives in the Android Keystore, in the secure element where the device has one and accepts the key, otherwise in the trusted execution environment. AES runs on the CPU's hardware crypto extensions for speed.
 - **Quantum-resistant by design** — the vault is symmetric-only (AES-256), with no asymmetric key exchange. There is nothing for Shor's algorithm to break, and "harvest now, decrypt later" does not apply to a local vault. Under Grover's algorithm AES-256 still retains a ~128-bit security margin.
 - **Native crypto core** — Argon2id key derivation runs in C/C++, and key material is zeroed in native memory the moment it is no longer needed. Bulk AES-256-GCM runs through the platform's hardware-accelerated crypto provider.
 

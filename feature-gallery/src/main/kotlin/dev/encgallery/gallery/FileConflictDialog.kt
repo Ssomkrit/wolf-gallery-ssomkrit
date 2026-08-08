@@ -24,7 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CompletableDeferred
 
-enum class FileConflictChoice { SKIP, REPLACE, RENAME, CANCEL }
+enum class FileConflictChoice { SKIP, REPLACE, MERGE, RENAME, CANCEL }
 
 data class FileConflictResolution(
     val choice: FileConflictChoice,

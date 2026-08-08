@@ -1,0 +1,3 @@
+Added export of a whole group: it leaves the vault as one folder, with a subfolder for every album inside it.
+
+Existing features have been improved and a number of bugs fixed. Translations have been refined throughout.

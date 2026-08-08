@@ -146,7 +146,7 @@ private fun SrcGroupTile(
             text = summary.meta.name,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth()
         )
@@ -189,7 +189,7 @@ private fun SrcMosaicQuadrant(
                     if (custom != null) return@withContext custom
                 }
                 album.firstEntry?.let { entry ->
-                    ThumbnailLoader.loadOrGenerate(
+                    ThumbnailLoader.loadCoverEntry(
                         context = context.applicationContext,
                         entry = entry,
                         keystore = keystore
@@ -312,7 +312,7 @@ private fun SrcAlbumTile(
                 if (custom != null) return@withContext custom
             }
             firstEntry?.let { entry ->
-                ThumbnailLoader.loadOrGenerate(
+                ThumbnailLoader.loadCoverEntry(
                     context = context.applicationContext,
                     entry = entry,
                     keystore = keystore
@@ -351,7 +351,7 @@ private fun SrcAlbumTile(
             text = summary.meta.name,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth()
         )

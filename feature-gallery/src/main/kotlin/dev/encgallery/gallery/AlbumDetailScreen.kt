@@ -10,14 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import dev.encgallery.featuresettings.ThemedIcon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,8 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.encgallery.logging.EncLog
 
@@ -134,38 +128,16 @@ fun AlbumDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-
-                    verticalAlignment = Alignment.Top
-                ) {
-                    IconButton(onClick = onBack) {
-                        ThemedIcon(
-                            vector = Icons.Default.ArrowBack,
-                            contentDescription = stringResource(R.string.album_detail_back)
-                        )
-                    }
-                    Column(modifier = Modifier.padding(top = 12.dp, end = 12.dp)) {
-                        Text(
-                            text = albumMeta.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = pluralStringResource(
-                                R.plurals.album_photo_count,
-                                entries.size,
-                                entries.size
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                DrillDownHeader(
+                    title = albumMeta.name,
+                    subtitle = pluralStringResource(
+                        R.plurals.album_photo_count,
+                        entries.size,
+                        entries.size
+                    ),
+                    backContentDescription = stringResource(R.string.album_detail_back),
+                    onBack = onBack
+                )
             }
         }
     ) { innerPadding ->
@@ -218,7 +190,7 @@ fun AlbumDetailScreen(
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            text = stringResource(R.string.search_no_results_unnamed_hint),
+                            text = stringResource(R.string.search_hint_scope_album),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -240,6 +212,7 @@ fun AlbumDetailScreen(
                     enlarged = enlarged,
                     mosaicState = mosaicState,
                     modifier = Modifier.weight(1f),
+                    anchorKey = if (isSearching) null else "album:$albumUuid",
                     gridHeightDp = null
                 )
             }

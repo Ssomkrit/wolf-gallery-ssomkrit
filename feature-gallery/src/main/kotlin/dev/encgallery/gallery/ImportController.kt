@@ -19,6 +19,9 @@ object ImportController {
 
     private val scope = CoroutineScope(SupervisorJob())
 
+    @Volatile
+    var folderImportUserCancelled: Boolean = false
+
     var importing by mutableStateOf(false)
         private set
     var currentIndex by mutableIntStateOf(0)

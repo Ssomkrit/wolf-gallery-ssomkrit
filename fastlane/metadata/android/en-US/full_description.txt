@@ -10,7 +10,7 @@ Every file is encrypted in an isolated vault inside the app's private storage. T
 
 <b>Organize</b>
 
-Create groups and albums inside the app and rename anything, including with emoji. Sort, search and pin your groups, albums and files, set an album cover from any picture with adjustable framing, and import or export on your own terms. You can share to other apps or set a wallpaper directly from the vault.
+Create groups and albums inside the app and rename anything, including with emoji. Sort, search and pin your groups, albums and files, set an album cover from any picture with adjustable framing, and import or export on your own terms — a whole group leaves as a folder with a subfolder per album. You can share to other apps or set a wallpaper directly from the vault.
 
 <b>Appearance</b>
 

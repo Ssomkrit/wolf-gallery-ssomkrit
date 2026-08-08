@@ -38,7 +38,7 @@
 
     <string name="selection_cancel">Cancel selection</string>
 
-    <string name="album_default_imported_name">Imported</string>
+    <string name="album_default_imported_name">Downloads</string>
 
     <string name="tab_all">All</string>
     <string name="tab_albums">Albums</string>
@@ -163,6 +163,7 @@
     <string name="export_done_single">Exported to device</string>
     <string name="export_done_multi">Exported %1$d of %2$d</string>
     <string name="export_failed">Could not export to device</string>
+    <string name="export_group_empty">This group has no media files to export</string>
     <string name="export_progress_title">Exporting to device</string>
 
     <string name="import_folder_default_name">Import</string>

@@ -162,6 +162,8 @@
     <string name="group_action_delete">Delete</string>
     <string name="group_action_pin">Pin</string>
     <string name="group_action_unpin">Unpin</string>
+    <string name="group_action_export">Export to device</string>
+    <string name="export_group_empty">This group has no media files to export</string>
     <string name="group_rename_dialog_title">Rename group</string>
     <string name="group_delete_dialog_title">Delete group?</string>
     <string name="group_delete_dialog_body_empty">Empty group will be moved to Trash. Restorable within 30 days.</string>
@@ -259,7 +261,10 @@
     <string name="search_clear">Clear query</string>
     <string name="search_no_results">Nothing found for \'%1$s\'</string>
 
-    <string name="search_no_results_unnamed_hint">Files imported before this version have no saved name and don\'t appear here. Re-import them to make them searchable.</string>
+    <string name="search_hint_scope_media">Search matches media file names. A media file with no saved name is never found — give it one by renaming it.</string>
+    <string name="search_hint_scope_album">Search matches the names of media files in this album. A media file with no saved name is never found — give it one by renaming it.</string>
+    <string name="search_hint_scope_albums">Search matches album and group names. Media files inside them are not searched here — open an album and search there.</string>
+    <string name="search_hint_scope_group">Search matches the names of albums in this group. Media files inside them are not searched here — open an album and search there.</string>
 
     <string name="albums_empty_state">No albums yet. Tap + to create one.</string>
     <string name="albums_create_fab">Create album</string>
@@ -285,6 +290,9 @@
 
     <string name="album_conflict_title">Album action</string>
     <string name="album_conflict_apply_all">Apply to all albums</string>
+    <string name="album_conflict_subtitle">Add the files to the existing album, or give the import a different name.</string>
+    <string name="album_conflict_merge">Add to the existing album</string>
+    <string name="album_conflict_subtitle_system">This album belongs to the app itself — rename the import or skip the folder.</string>
 
     <string name="album_rename_dialog_title">Rename album</string>
     <string name="album_rename_btn_save">Save</string>

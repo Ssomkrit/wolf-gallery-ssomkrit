@@ -54,7 +54,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,6 +107,8 @@ fun GalleryGrid(
     enlarged: Boolean = false,
     mosaicState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier,
+
+    anchorKey: String? = null,
 
     gridHeightDp: Int? = GRID_HEIGHT_DP
 ) {
@@ -220,6 +224,7 @@ fun GalleryGrid(
                 inSelectionMode = inSelectionMode,
                 onView = onView,
                 onToggle = { toggle(it) },
+                anchorKey = anchorKey,
                 modifier = Modifier.fillMaxSize()
             )
             FastScroller(
@@ -227,6 +232,13 @@ fun GalleryGrid(
                 modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
             )
         } else {
+            if (anchorKey != null) {
+                GridScrollAnchor(
+                    anchorKey = anchorKey,
+                    state = gridState,
+                    entries = entries
+                )
+            }
             LazyVerticalGrid(
                 state = gridState,
                 modifier = Modifier.fillMaxSize(),
@@ -371,6 +383,94 @@ fun GalleryGrid(
     }
 }
 
+@Composable
+private fun GridScrollAnchor(
+    anchorKey: String,
+    state: LazyGridState,
+    entries: List<VaultEntry>
+) {
+    var restored by remember(anchorKey) { mutableStateOf(false) }
+    LaunchedEffect(anchorKey, entries) {
+        if (restored || entries.isEmpty()) return@LaunchedEffect
+        val anchor = GallerySession.scrollAnchors[anchorKey]
+        if (anchor != null) {
+            val idx = entries.indexOfFirst { it.uuid == anchor.first }
+            if (idx >= 0) state.scrollToItem(idx, anchor.second)
+            EncLog.d(
+                "ScrollAnchor",
+                "grid $anchorKey: restored to item $idx offset ${anchor.second} of ${entries.size}"
+            )
+        }
+        restored = true
+    }
+    var userScrolled by remember(anchorKey) { mutableStateOf(false) }
+    LaunchedEffect(anchorKey, state) {
+        snapshotFlow { state.isScrollInProgress }.collect { scrolling ->
+            if (scrolling) userScrolled = true
+        }
+    }
+    LaunchedEffect(anchorKey, state, entries) {
+        snapshotFlow {
+            state.firstVisibleItemIndex to state.firstVisibleItemScrollOffset
+        }.collect { (idx, offset) ->
+            if (!restored || !userScrolled) return@collect
+            if (state.layoutInfo.visibleItemsInfo.isEmpty()) return@collect
+            val uuid = entries.getOrNull(idx)?.uuid ?: return@collect
+            GallerySession.scrollAnchors[anchorKey] = uuid to offset
+        }
+    }
+}
+
+@Composable
+private fun MosaicScrollAnchor(
+    anchorKey: String,
+    state: LazyListState,
+    rows: List<MosaicRow>
+) {
+    var restored by remember(anchorKey) { mutableStateOf(false) }
+    LaunchedEffect(anchorKey, rows) {
+        if (restored || rows.isEmpty()) return@LaunchedEffect
+        val anchor = GallerySession.scrollAnchors[anchorKey]
+        if (anchor != null) {
+            val idx = rows.indexOfFirst { row ->
+                row.items.any { it.uuid == anchor.first }
+            }
+            if (idx >= 0) state.scrollToItem(idx, anchor.second)
+            EncLog.d(
+                "ScrollAnchor",
+                "mosaic $anchorKey: restored to row $idx offset ${anchor.second} of ${rows.size}"
+            )
+        }
+        restored = true
+    }
+    var userScrolled by remember(anchorKey) { mutableStateOf(false) }
+    LaunchedEffect(anchorKey, state) {
+        snapshotFlow { state.isScrollInProgress }.collect { scrolling ->
+            if (scrolling) userScrolled = true
+        }
+    }
+    LaunchedEffect(anchorKey, state, rows) {
+        snapshotFlow {
+            state.firstVisibleItemIndex to state.firstVisibleItemScrollOffset
+        }.collect { (idx, offset) ->
+            if (!restored || !userScrolled) return@collect
+            if (state.layoutInfo.visibleItemsInfo.isEmpty()) return@collect
+            val row = rows.getOrNull(idx) ?: return@collect
+            val uuid = row.items.firstOrNull()?.uuid ?: return@collect
+            GallerySession.scrollAnchors[anchorKey] = uuid to offset
+        }
+    }
+    DisposableEffect(anchorKey) {
+        onDispose {
+            val saved = GallerySession.scrollAnchors[anchorKey]
+            EncLog.d(
+                "ScrollAnchor",
+                "mosaic $anchorKey: leaving with anchor ${saved?.second} scrolled=$userScrolled"
+            )
+        }
+    }
+}
+
 internal data class MosaicRow(
     val items: List<VaultEntry>,
     val heightPx: Int,
@@ -420,6 +520,7 @@ private fun MosaicJustified(
     inSelectionMode: Boolean,
     onView: (VaultEntry) -> Unit,
     onToggle: (String) -> Unit,
+    anchorKey: String? = null,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -429,8 +530,17 @@ private fun MosaicJustified(
     val maxPerRow = 2
     BoxWithConstraints(modifier) {
         val widthPx = constraints.maxWidth
-        val rows = remember(entries, widthPx) {
+        val aspectRevision = GallerySession.mosaicAspectRevision
+        val rows = remember(entries, widthPx, aspectRevision) {
             computeMosaicRows(entries, widthPx, spacingPx, targetRowHeightPx, maxPerRow)
+        }
+
+        if (anchorKey != null) {
+            MosaicScrollAnchor(
+                anchorKey = anchorKey,
+                state = state,
+                rows = rows
+            )
         }
 
         val pendingUuid = GallerySession.pendingScrollToViewedUuid.value

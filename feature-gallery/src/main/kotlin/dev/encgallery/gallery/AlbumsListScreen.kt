@@ -55,6 +55,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
@@ -115,6 +116,7 @@ fun AlbumsListScreen(
     onDeleteAlbumsSelection: (Set<String>) -> Unit,
 
     onExportAlbums: (Set<String>) -> Unit,
+    onExportGroup: (AlbumGroupMeta) -> Unit,
     onRenameGroup: (AlbumGroupMeta, String) -> Unit,
     onDeleteGroup: (AlbumGroupMeta) -> Unit,
 
@@ -299,18 +301,33 @@ fun AlbumsListScreen(
                         .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = when {
-                            isSearching -> stringResource(
-                                R.string.search_no_results,
-                                trimmedQuery
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = when {
+                                isSearching -> stringResource(
+                                    R.string.search_no_results,
+                                    trimmedQuery
+                                )
+                                openedGroup != null -> stringResource(R.string.album_detail_empty)
+                                else -> stringResource(R.string.albums_empty_state)
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        if (isSearching) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(
+                                    if (openedGroup != null) R.string.search_hint_scope_group
+                                    else R.string.search_hint_scope_albums
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
                             )
-                            openedGroup != null -> stringResource(R.string.album_detail_empty)
-                            else -> stringResource(R.string.albums_empty_state)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        }
+                    }
                 }
             } else {
 
@@ -713,6 +730,10 @@ fun AlbumsListScreen(
                     clearGroupAction()
                 },
                 onRename = { groupActionStage = GroupActionStage.RENAME },
+                onExport = {
+                    onExportGroup(target.meta)
+                    clearGroupAction()
+                },
                 onDelete = { groupActionStage = GroupActionStage.DELETE_CONFIRM },
                 onDismiss = clearGroupAction
             )
@@ -837,16 +858,23 @@ private fun AlbumTile(
 
     val customCoverUuid = summary.meta.coverEntryUuid
     val cacheKey = customCoverUuid ?: summary.firstEntry?.uuid
-    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
-        mutableStateOf<Bitmap?>(null)
-    }
-
     val firstEntry = summary.firstEntry
+
+    var coverBitmap by remember(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
+        mutableStateOf(
+            if (customCoverUuid != null) {
+                ThumbnailLoader.peekAlbumCover(summary.meta.uuid)
+            } else {
+                firstEntry?.let { ThumbnailLoader.peekCoverEntry(it.uuid) }
+            }
+        )
+    }
 
     val isEmpty = customCoverUuid == null && firstEntry == null
     val emptyColors = emptyCoverColors()
     LaunchedEffect(cacheKey, summary.meta.modifiedAt, summary.meta.coverRevision) {
         if (customCoverUuid == null && firstEntry == null) return@LaunchedEffect
+        if (coverBitmap != null) return@LaunchedEffect
         coverBitmap = withContext(Dispatchers.IO) {
             val keystore = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
 
@@ -860,7 +888,7 @@ private fun AlbumTile(
             }
 
             firstEntry?.let { entry ->
-                ThumbnailLoader.loadOrGenerate(
+                ThumbnailLoader.loadCoverEntry(
                     context = context.applicationContext,
                     entry = entry,
                     keystore = keystore
@@ -1594,6 +1622,7 @@ private fun GroupActionDialog(
     isPinned: Boolean,
     onTogglePin: () -> Unit,
     onRename: () -> Unit,
+    onExport: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1621,6 +1650,15 @@ private fun GroupActionDialog(
                 ) {
                     Text(
                         text = stringResource(R.string.group_action_rename),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                TextButton(
+                    onClick = onExport,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.group_action_export),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -1709,38 +1747,15 @@ private fun GroupDrillDownHeader(
     group: AlbumGroupSummary,
     onBack: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-
-        verticalAlignment = Alignment.Top
-    ) {
-        IconButton(onClick = onBack) {
-            ThemedIcon(
-                vector = Icons.Default.ArrowBack,
-                contentDescription = stringResource(R.string.group_drilldown_back)
-            )
-        }
-        Column(modifier = Modifier.padding(top = 12.dp)) {
-
-            Text(
-                text = group.meta.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = pluralStringResource(
-                    R.plurals.group_drilldown_subtitle,
-                    group.albums.size,
-                    group.albums.size
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
+    DrillDownHeader(
+        title = group.meta.name,
+        subtitle = pluralStringResource(
+            R.plurals.group_drilldown_subtitle,
+            group.albums.size,
+            group.albums.size
+        ),
+        backContentDescription = stringResource(R.string.group_drilldown_back),
+        onBack = onBack
+    )
     androidx.compose.material3.HorizontalDivider()
 }

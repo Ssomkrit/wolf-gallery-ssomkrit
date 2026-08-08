@@ -39,6 +39,7 @@ object MosaicAspectStore {
                         }
                     }
                     EncLog.d(TAG, "loaded $n aspect ratios")
+                    if (n > 0) GallerySession.mosaicAspectRevision++
                 } catch (t: Throwable) {
                     EncLog.w(TAG, "load failed: ${t.javaClass.simpleName}: ${t.message}")
                 }
@@ -73,6 +74,7 @@ object MosaicAspectStore {
         }
         if (added > 0) {
             EncLog.d(TAG, "backfilled $added missing aspect ratios")
+            GallerySession.mosaicAspectRevision++
             flush(context, keystore)
         }
     }

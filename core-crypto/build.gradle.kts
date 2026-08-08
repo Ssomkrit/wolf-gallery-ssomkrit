@@ -36,4 +36,5 @@ android {
 dependencies {
 
     implementation(project(":core-native"))
+    implementation(project(":core-logging"))
 }

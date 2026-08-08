@@ -4,11 +4,14 @@ object SettingsSession {
 
     var lastOpenCategory: SettingsCategory = SettingsCategory.HOME
 
-    var lastTestsAndLogsScrollPx: Int = 0
+    var lastSecretChangeOpen: Boolean = false
+
+    val scrollByKey: MutableMap<String, Int> = mutableMapOf()
 
     fun reset() {
         lastOpenCategory = SettingsCategory.HOME
-        lastTestsAndLogsScrollPx = 0
+        lastSecretChangeOpen = false
+        scrollByKey.clear()
     }
 }
 

@@ -199,6 +199,8 @@
     <string name="group_action_delete">حذف</string>
     <string name="group_action_pin">تثبيت</string>
     <string name="group_action_unpin">إلغاء التثبيت</string>
+    <string name="group_action_export">تصدير إلى الجهاز</string>
+    <string name="export_group_empty">لا توجد في هذه المجموعة ملفات وسائط للتصدير</string>
     <string name="group_rename_dialog_title">إعادة تسمية المجموعة</string>
     <string name="group_delete_dialog_title">حذف المجموعة؟</string>
     <string name="group_delete_dialog_body_empty">ستُنقل المجموعة الفارغة إلى المهملات. قابلة للاستعادة خلال 30 يومًا.</string>
@@ -301,7 +303,10 @@
     <string name="search_close">إغلاق البحث</string>
     <string name="search_clear">مسح النص</string>
     <string name="search_no_results">لا توجد نتائج لـ «%1$s»</string>
-    <string name="search_no_results_unnamed_hint">الملفات المستوردة قبل هذا الإصدار ليس لها اسم محفوظ ولا تظهر هنا. أعد استيرادها لتصبح قابلة للبحث.</string>
+    <string name="search_hint_scope_media">يجري البحث في أسماء ملفات الوسائط. الملف الذي لا يحمل اسمًا محفوظًا لا يظهر في النتائج — امنحه اسمًا عبر إعادة التسمية.</string>
+    <string name="search_hint_scope_album">يجري البحث في أسماء ملفات الوسائط داخل هذا الألبوم. الملف الذي لا يحمل اسمًا محفوظًا لا يظهر في النتائج — امنحه اسمًا عبر إعادة التسمية.</string>
+    <string name="search_hint_scope_albums">يجري البحث في أسماء الألبومات والمجموعات. ملفات الوسائط داخلها لا تُبحث هنا — افتح ألبومًا وابحث داخله.</string>
+    <string name="search_hint_scope_group">يجري البحث في أسماء ألبومات هذه المجموعة. ملفات الوسائط داخلها لا تُبحث هنا — افتح ألبومًا وابحث داخله.</string>
 
     <string name="albums_empty_state">لا توجد ألبومات بعد. انقر + لإنشاء واحد.</string>
     <string name="albums_create_fab">إنشاء ألبوم</string>
@@ -324,6 +329,9 @@
     <string name="entry_dup_in_album">يوجد ملف بهذا الاسم في هذا الألبوم بالفعل</string>
     <string name="album_conflict_title">إجراء على الألبوم</string>
     <string name="album_conflict_apply_all">تطبيق على كل الألبومات</string>
+    <string name="album_conflict_subtitle">أضف الملفات إلى الألبوم الموجود أو امنح الاستيراد اسمًا آخر.</string>
+    <string name="album_conflict_merge">إضافة إلى الألبوم الموجود</string>
+    <string name="album_conflict_subtitle_system">هذا ألبوم التطبيق نفسه — أعد تسمية الاستيراد أو تخطَّ المجلد.</string>
 
     <string name="album_rename_dialog_title">إعادة تسمية الألبوم</string>
     <string name="album_rename_btn_save">حفظ</string>

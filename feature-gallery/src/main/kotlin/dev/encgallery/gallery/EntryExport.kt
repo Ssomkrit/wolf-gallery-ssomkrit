@@ -17,6 +17,11 @@ data class AlbumExportBundle(
     val entries: List<VaultEntry>
 )
 
+data class GroupExportBundle(
+    val folderName: String,
+    val albums: List<AlbumExportBundle>
+)
+
 object EntryExport {
 
     private const val TAG = "EntryExport"
@@ -100,16 +105,86 @@ object EntryExport {
     ): Pair<Int, Int> = withContext(Dispatchers.IO) {
         val totalFiles = albums.sumOf { it.entries.size }
         if (totalFiles == 0) return@withContext 0 to 0
+        val rootDocUri = DocumentsContract.buildDocumentUriUsingTree(
+            treeUri,
+            DocumentsContract.getTreeDocumentId(treeUri)
+        )
+        onProgress?.invoke(0, totalFiles)
+        val ok = writeAlbumsInto(
+            resolver = context.contentResolver,
+            parentDocUri = rootDocUri,
+            albums = albums,
+            repo = EntriesRepository(keystore),
+            keystore = keystore,
+            totalFiles = totalFiles,
+            processedBefore = 0,
+            onProgress = onProgress
+        ).first
+        EncLog.i(TAG, "exportAlbumsToTree: $ok/$totalFiles file(s) into ${albums.size} folder(s)")
+        ok to totalFiles
+    }
+
+    suspend fun exportGroupToTree(
+        context: Context,
+        group: GroupExportBundle,
+        treeUri: Uri,
+        keystore: KeystoreAesGcm,
+        onProgress: (suspend (done: Int, total: Int) -> Unit)? = null
+    ): Pair<Int, Int> = withContext(Dispatchers.IO) {
+        val totalFiles = group.albums.sumOf { it.entries.size }
+        if (totalFiles == 0) return@withContext 0 to 0
         val resolver = context.contentResolver
         val rootDocUri = DocumentsContract.buildDocumentUriUsingTree(
             treeUri,
             DocumentsContract.getTreeDocumentId(treeUri)
         )
-        val repo = EntriesRepository(keystore)
+        val groupFolder = sanitize(group.folderName) ?: "WolfGallery"
+        val groupDirUri: Uri? = try {
+            DocumentsContract.createDocument(
+                resolver,
+                rootDocUri,
+                DocumentsContract.Document.MIME_TYPE_DIR,
+                groupFolder
+            )
+        } catch (t: Throwable) {
+            EncLog.w(TAG, "exportGroupToTree: mkdir '$groupFolder' failed: ${t.javaClass.simpleName}")
+            null
+        }
+        if (groupDirUri == null) {
+            EncLog.w(TAG, "exportGroupToTree: no dir for '$groupFolder', nothing written")
+            return@withContext 0 to totalFiles
+        }
+        onProgress?.invoke(0, totalFiles)
+        val ok = writeAlbumsInto(
+            resolver = resolver,
+            parentDocUri = groupDirUri,
+            albums = group.albums,
+            repo = EntriesRepository(keystore),
+            keystore = keystore,
+            totalFiles = totalFiles,
+            processedBefore = 0,
+            onProgress = onProgress
+        ).first
+        EncLog.i(
+            TAG,
+            "exportGroupToTree: $ok/$totalFiles file(s) into '$groupFolder'/${group.albums.size} folder(s)"
+        )
+        ok to totalFiles
+    }
+
+    private suspend fun writeAlbumsInto(
+        resolver: ContentResolver,
+        parentDocUri: Uri,
+        albums: List<AlbumExportBundle>,
+        repo: EntriesRepository,
+        keystore: KeystoreAesGcm,
+        totalFiles: Int,
+        processedBefore: Int,
+        onProgress: (suspend (done: Int, total: Int) -> Unit)?
+    ): Pair<Int, Int> {
         val usedFolders = HashSet<String>()
         var ok = 0
-        var processed = 0
-        onProgress?.invoke(0, totalFiles)
+        var processed = processedBefore
         albums.forEach { album ->
             val folderName = uniqueName(
                 sanitize(album.folderName) ?: "WolfGallery", usedFolders
@@ -118,18 +193,18 @@ object EntryExport {
             val dirUri: Uri? = try {
                 DocumentsContract.createDocument(
                     resolver,
-                    rootDocUri,
+                    parentDocUri,
                     DocumentsContract.Document.MIME_TYPE_DIR,
                     folderName
                 )
             } catch (t: Throwable) {
-                EncLog.w(TAG, "exportAlbumsToTree: mkdir '$folderName' failed: ${t.javaClass.simpleName}")
+                EncLog.w(TAG, "export: mkdir '$folderName' failed: ${t.javaClass.simpleName}")
                 null
             }
             if (dirUri == null) {
                 EncLog.w(
                     TAG,
-                    "exportAlbumsToTree: no dir for '$folderName', skipping ${album.entries.size} file(s)"
+                    "export: no dir for '$folderName', skipping ${album.entries.size} file(s)"
                 )
                 processed += album.entries.size
                 onProgress?.invoke(processed, totalFiles)
@@ -145,8 +220,7 @@ object EntryExport {
                 onProgress?.invoke(processed, totalFiles)
             }
         }
-        EncLog.i(TAG, "exportAlbumsToTree: $ok/$totalFiles file(s) into ${albums.size} folder(s)")
-        ok to totalFiles
+        return ok to processed
     }
 
     private fun writeEntryInto(
