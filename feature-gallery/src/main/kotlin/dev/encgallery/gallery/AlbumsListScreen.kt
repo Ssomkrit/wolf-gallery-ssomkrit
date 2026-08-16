@@ -810,22 +810,34 @@ private fun CreateChoiceItem(
     }
 }
 
-internal data class EmptyCoverColors(val tile: Color, val wolf: Color)
+internal data class EmptyCoverColors(val tile: Color, val wolf: Color, val seam: Color)
 
 @Composable
 internal fun emptyCoverColors(): EmptyCoverColors {
     val cs = MaterialTheme.colorScheme
     return when {
         cs.surface.luminance() > 0.5f ->
-            EmptyCoverColors(tile = cs.surfaceVariant, wolf = cs.onSurfaceVariant)
+            EmptyCoverColors(
+                tile = cs.surfaceVariant,
+                wolf = cs.onSurfaceVariant,
+                seam = cs.surface
+            )
 
         cs.surfaceVariant.luminance() < 0.02f -> {
             val tile = lerp(cs.surface, cs.onSurfaceVariant, 0.42f)
-            EmptyCoverColors(tile = tile, wolf = lerp(tile, Color.Black, 0.70f))
+            EmptyCoverColors(
+                tile = tile,
+                wolf = lerp(tile, Color.Black, 0.70f),
+                seam = cs.surface
+            )
         }
         else -> {
             val tile = lerp(cs.surface, cs.onSurfaceVariant, 0.30f)
-            EmptyCoverColors(tile = tile, wolf = lerp(tile, Color.Black, 0.62f))
+            EmptyCoverColors(
+                tile = tile,
+                wolf = lerp(tile, Color.Black, 0.62f),
+                seam = cs.surface
+            )
         }
     }
 }
@@ -1459,9 +1471,7 @@ private fun GroupTile(
         summary.albums.take(4)
     }
 
-    val hasAnyCover = mosaicAlbums.any {
-        it.meta.coverEntryUuid != null || it.firstEntry != null
-    }
+    val hasAnyAlbum = mosaicAlbums.isNotEmpty()
     val emptyColors = emptyCoverColors()
 
     Column(
@@ -1480,7 +1490,7 @@ private fun GroupTile(
                 .background(emptyColors.tile),
             contentAlignment = Alignment.Center
         ) {
-            if (!hasAnyCover) {
+            if (!hasAnyAlbum) {
 
                 EmptyCoverWolf(
                     color = emptyColors.wolf,
@@ -1489,7 +1499,11 @@ private fun GroupTile(
                 )
             } else {
 
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(emptyColors.seam)
+                ) {
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -1600,17 +1614,25 @@ private fun MosaicQuadrant(
             }
         }
     }
+    val emptyAlbum = album != null && customCoverUuid == null && album.firstEntry == null
+    val quadrantColors = emptyCoverColors()
     Box(
 
-        modifier = modifier.background(emptyCoverColors().tile),
+        modifier = modifier.background(quadrantColors.tile),
         contentAlignment = Alignment.Center
     ) {
-        bitmap?.let {
+        val shown = bitmap
+        if (shown != null) {
             Image(
-                bitmap = it.asImageBitmap(),
+                bitmap = shown.asImageBitmap(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
+            )
+        } else if (emptyAlbum) {
+            EmptyCoverWolf(
+                color = quadrantColors.wolf,
+                modifier = Modifier.fillMaxSize(0.5f)
             )
         }
     }

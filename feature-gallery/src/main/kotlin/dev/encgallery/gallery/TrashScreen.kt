@@ -580,7 +580,7 @@ private fun TrashGroupTile(
             .take(4)
     }
 
-    val hasAnyCover = mosaic.any { it.entryCount > 0 }
+    val hasAnyCover = mosaic.isNotEmpty()
     val emptyColors = emptyCoverColors()
     TrashContainerTile(
         primary = displayName,
@@ -605,7 +605,7 @@ private fun TrashGroupTile(
                     )
                 }
             } else {
-                Column(modifier = mod) {
+                Column(modifier = mod.background(emptyColors.seam)) {
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -673,15 +673,23 @@ private fun TrashMosaicQuadrant(
             )
         }
     }
+    val quadrantColors = emptyCoverColors()
     Box(
-        modifier = modifier.background(emptyCoverColors().tile)
+        modifier = modifier.background(quadrantColors.tile),
+        contentAlignment = Alignment.Center
     ) {
-        bmp?.let {
+        val shown = bmp
+        if (shown != null) {
             Image(
-                bitmap = it.asImageBitmap(),
+                bitmap = shown.asImageBitmap(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
+            )
+        } else if (album.entryCount == 0) {
+            EmptyCoverWolf(
+                color = quadrantColors.wolf,
+                modifier = Modifier.fillMaxSize(0.5f)
             )
         }
     }

@@ -245,9 +245,7 @@ private fun DestGroupTile(
         summary.albums.take(4)
     }
 
-    val hasAnyCover = mosaicAlbums.any {
-        it.meta.coverEntryUuid != null || it.firstEntry != null
-    }
+    val hasAnyCover = mosaicAlbums.isNotEmpty()
     val emptyColors = emptyCoverColors()
     Column(
         modifier = Modifier
@@ -270,7 +268,11 @@ private fun DestGroupTile(
                     modifier = Modifier.fillMaxSize(0.96f)
                 )
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(emptyColors.seam)
+                ) {
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -455,16 +457,24 @@ private fun DestMosaicQuadrant(
             }
         }
     }
+    val emptyAlbum = album != null && customCoverUuid == null && album.firstEntry == null
+    val quadrantColors = emptyCoverColors()
     Box(
-        modifier = modifier.background(emptyCoverColors().tile),
+        modifier = modifier.background(quadrantColors.tile),
         contentAlignment = Alignment.Center
     ) {
-        bitmap?.let {
+        val shown = bitmap
+        if (shown != null) {
             Image(
-                bitmap = it.asImageBitmap(),
+                bitmap = shown.asImageBitmap(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
+            )
+        } else if (emptyAlbum) {
+            EmptyCoverWolf(
+                color = quadrantColors.wolf,
+                modifier = Modifier.fillMaxSize(0.5f)
             )
         }
     }
