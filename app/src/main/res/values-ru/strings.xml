@@ -34,6 +34,10 @@
     <string name="sort_option_date_asc">По дате (по возрастанию)</string>
     <string name="sort_option_name_az">По имени (А—Я)</string>
     <string name="sort_option_name_za">По имени (Я—А)</string>
+    <string name="sort_option_size_desc">По размеру (по убыванию)</string>
+    <string name="sort_option_size_asc">По размеру (по возрастанию)</string>
+    <string name="sort_option_album">По альбому</string>
+    <string name="sort_option_random">Случайная</string>
     <string name="sort_dialog_btn_close">Закрыть</string>
 
     <string name="selection_cancel">Отменить выбор</string>
@@ -110,7 +114,7 @@
     <string name="toast_securebytes_fail">SecureBytes ПРОВАЛЕН — см. лог</string>
 
     <string name="argon2_header">Самопроверка Argon2id (память-затратная KDF)</string>
-    <string name="argon2_subtitle">Дважды выводит 32-байтный ключ из пароля «password» и соли «somesalt12345678» с одинаковыми параметрами (ключи должны совпасть), затем ещё раз с другой солью (ключ должен отличаться). Для скорости отладки берутся параметры 4 МиБ / 2 прохода / 1 поток; в рабочем режиме — 64 МиБ / 3 / 4.</string>
+    <string name="argon2_subtitle">Дважды выводит 32-байтный ключ из пароля «password» и соли «somesalt12345678» с одинаковыми параметрами (ключи должны совпасть), затем ещё раз с другой солью (ключ должен отличаться). Для скорости отладки берутся параметры 4 МиБ / 2 прохода / 1 поток; в рабочем режиме для пароля — 64 МиБ / 3 прохода / 4 потока, для ПИН-кода — 128 МиБ / 5 / 4.</string>
     <string name="btn_run_argon2_test">Запустить самопроверку Argon2id</string>
     <string name="argon2_running">Вычисляем…</string>
     <string name="toast_argon2_pass">Argon2id ПРОЙДЕН — детерминизм и чувствительность к соли подтверждены</string>
@@ -138,7 +142,7 @@
     <string name="toast_pwchange_fail">Устойчивость смены пароля ПРОВАЛЕНА — см. лог</string>
 
     <string name="blob_header">Самопроверка зашифрованного blob\'а (per-file крипто)</string>
-    <string name="blob_subtitle">Шифрует 2 МиБ случайных данных в файл, проверяет его формат на диске (сигнатура, версия и заголовок с вектором инициализации — около 36 байт служебных данных), что зашифрованные байты на диске отличаются от исходных на том же месте, расшифровывает обратно и сверяет контрольную сумму SHA-256, а также что файл с испорченными данными, неверной сигнатурой или версией отвергается. Использует тестовый ключ Keystore; рабочий мастер-ключ не затрагивается.</string>
+    <string name="blob_subtitle">Шифрует 2 МиБ случайных данных и проверяет оба формата хранения. Текущий, чанковый: файл режется на куски по 1 МиБ, у каждого свой тег целостности — сверяет разбиение и размер, побайтовое совпадение после расшифровки, чтение с произвольного места через границу куска и за концом файла, а также что файл отвергается, если куски переставлены местами, если обрезан конец или испорчен заголовок. Прежний формат, который читается ради ранее сохранённых файлов: сигнатура, версия и заголовок с вектором инициализации (около 36 байт служебных данных), отличие зашифрованных байтов от исходных на том же месте, сверка SHA-256 после расшифровки и отказ при порче данных, сигнатуры или версии. Используются только тестовые ключи; рабочий ключ сейфа не затрагивается.</string>
     <string name="btn_run_blob_test">Запустить round-trip blob\'а</string>
     <string name="blob_running">Шифруем + расшифровываем 2 МиБ…</string>
     <string name="toast_blob_pass">Blob round-trip ПРОЙДЕН — все 6 свойств подтверждены</string>
@@ -184,4 +188,15 @@
     <string name="export_fixed_folder_unavailable">Сохранённая папка сейчас недоступна — выберите, куда экспортировать</string>
     <string name="import_picker_progress_title">Импорт в сейф</string>
     <string name="import_canceled">Импорт отменён</string>
+    <string name="import_vault_locked">Сейф был заблокирован — ничего не импортировано. Разблокируйте и повторите.</string>
+    <string name="vault_key_header">Ключ сейфа</string>
+    <string name="vault_key_subtitle">Где хранится ключ, которым разворачивается этот сейф</string>
+    <string name="vault_key_current">Ключ сейфа: %1$s</string>
+    <string name="vault_key_new">Новый ключ получит: %1$s</string>
+    <string name="vault_key_absent">ещё не создан</string>
+    <string name="vault_key_checking">проверяю…</string>
+    <string name="vault_key_unavailable">недоступно (%1$s)</string>
+    <string name="vault_key_tier_strongbox">StrongBox</string>
+    <string name="vault_key_tier_tee">TEE</string>
+    <string name="vault_key_tier_software">программная защита</string>
 </resources>

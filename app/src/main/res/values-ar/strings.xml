@@ -31,6 +31,10 @@
     <string name="sort_option_date_asc">التاريخ (الأقدم أولًا)</string>
     <string name="sort_option_name_az">الاسم (أ–ي)</string>
     <string name="sort_option_name_za">الاسم (ي–أ)</string>
+    <string name="sort_option_size_desc">الحجم (الأكبر أولًا)</string>
+    <string name="sort_option_size_asc">الحجم (الأصغر أولًا)</string>
+    <string name="sort_option_album">حسب الألبوم</string>
+    <string name="sort_option_random">عشوائي</string>
     <string name="sort_dialog_btn_close">إغلاق</string>
 
     <string name="selection_cancel">إلغاء التحديد</string>
@@ -137,7 +141,7 @@
     <string name="toast_securebytes_fail">فشل SecureBytes — راجع السجل</string>
 
     <string name="argon2_header">اختبار ذاتي لـ Argon2id (دالة اشتقاق مفاتيح كثيفة الذاكرة)</string>
-    <string name="argon2_subtitle">يشتقّ مفتاحًا بحجم 32 بايت من \"password\"+\"somesalt12345678\" مرتين بالمعاملات نفسها (يجب أن يتطابقا)، ثم مرة بملح مختلف (يجب أن يختلف). يستخدم 4 ميبي / تكرارين / خيط واحد للتحقق السريع أثناء التطوير؛ معاملات الإنتاج هي 64 ميبي / 3 / 4.</string>
+    <string name="argon2_subtitle">يشتقّ مفتاحًا بحجم 32 بايت من \"password\"+\"somesalt12345678\" مرتين بالمعاملات نفسها (يجب أن يتطابقا)، ثم مرة بملح مختلف (يجب أن يختلف). يستخدم 4 ميبي / تكرارين / خيط واحد للتحقق السريع أثناء التطوير؛ معاملات الإنتاج هي 64 ميبي / 3 تكرارات / 4 خيوط لكلمة المرور، و128 ميبي / 5 / 4 لرمز PIN.</string>
     <string name="btn_run_argon2_test">تشغيل الاختبار الذاتي لـ Argon2id</string>
     <string name="argon2_running">جارٍ الحساب…</string>
     <string name="toast_argon2_pass">نجح Argon2id — تم التحقق من الحتمية والحساسية للملح</string>
@@ -165,7 +169,7 @@
     <string name="toast_pwchange_fail">فشل اختبار متانة تغيير كلمة المرور — راجع السجل</string>
 
     <string name="blob_header">اختبار ذاتي لكتلة ملف مشفّرة (تشفير لكل ملف)</string>
-    <string name="blob_subtitle">يمرّر 2 ميبي من النص الصريح العشوائي عبر CipherOutputStream، ويتحقق من البنية على القرص (magic + الإصدار + ترويسة IV، +36 بايت إضافية)، ويؤكّد أن بايتات النص المشفّر ≠ بايتات النص الصريح عند الإزاحة نفسها، ويُجري دورة كاملة للملف عبر فكّ التشفير ويطابق SHA-256، ويتحقق من رفض النص المشفّر المُعبَث به والـ magic الخاطئ والإصدار الخاطئ. يستخدم اسمًا مستعارًا للاختبار في Keystore؛ لا يُمَسّ المفتاح الرئيسي للإنتاج.</string>
+    <string name="blob_subtitle">يشفّر 2 ميبي من البيانات العشوائية ويتحقق من صيغتي التخزين كلتيهما. الصيغة الحالية بالكتل: يُقسّم الملف إلى كتل بحجم 1 ميبي، لكل منها وسم سلامة خاص — يتحقق من التقسيم والحجم، والتطابق بالبايت بعد فك التشفير، والقراءة من موضع عشوائي عبر حدود الكتلة وبعد نهاية الملف، وأن الملف يُرفض إذا بُدّلت الكتل أو قُطِعت نهايته أو عُبث بالترويسة. الصيغة القديمة، التي ما زالت تُقرأ من أجل الملفات المحفوظة سابقًا: magic والإصدار وترويسة IV (نحو 36 بايت إضافية)، واختلاف البايتات المشفّرة عن الصريحة في الموضع نفسه، ومطابقة SHA-256 بعد فك التشفير، ورفض البيانات المُعبث بها أو magic الخاطئ أو الإصدار الخاطئ. تُستخدم مفاتيح اختبار فقط؛ ولا يُمَسّ مفتاح الخزنة العامل.</string>
     <string name="btn_run_blob_test">تشغيل الاختبار الذاتي لدورة الكتلة</string>
     <string name="blob_running">جارٍ التشفير وفكّ التشفير لـ 2 ميبي…</string>
     <string name="toast_blob_pass">نجحت دورة الكتلة — تم التحقق من الخصائص الست</string>
@@ -183,4 +187,15 @@
     <string name="export_fixed_folder_unavailable">المجلد المحفوظ غير متاح الآن — اختر مكان التصدير</string>
     <string name="import_picker_progress_title">الاستيراد إلى الخزنة</string>
     <string name="import_canceled">أُلغي الاستيراد</string>
+    <string name="import_vault_locked">كانت الخزنة مقفلة — لم يُستورد أي شيء. افتحها ثم أعد المحاولة.</string>
+    <string name="vault_key_header">مفتاح الخزنة</string>
+    <string name="vault_key_subtitle">أين يُحفظ المفتاح الذي يفتح هذه الخزنة</string>
+    <string name="vault_key_current">مفتاح الخزنة: %1$s</string>
+    <string name="vault_key_new">المفتاح الجديد سيحصل على: %1$s</string>
+    <string name="vault_key_absent">لم يُنشأ بعد</string>
+    <string name="vault_key_checking">جارٍ الفحص…</string>
+    <string name="vault_key_unavailable">غير متاح (%1$s)</string>
+    <string name="vault_key_tier_strongbox">StrongBox</string>
+    <string name="vault_key_tier_tee">TEE</string>
+    <string name="vault_key_tier_software">حماية برمجية</string>
 </resources>

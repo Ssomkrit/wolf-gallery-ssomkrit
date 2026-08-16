@@ -31,6 +31,10 @@
     <string name="sort_option_date_asc">Fecha (más antiguos primero)</string>
     <string name="sort_option_name_az">Nombre (A–Z)</string>
     <string name="sort_option_name_za">Nombre (Z–A)</string>
+    <string name="sort_option_size_desc">Tamaño (mayores primero)</string>
+    <string name="sort_option_size_asc">Tamaño (menores primero)</string>
+    <string name="sort_option_album">Por álbum</string>
+    <string name="sort_option_random">Aleatorio</string>
     <string name="sort_dialog_btn_close">Cerrar</string>
 
     <string name="selection_cancel">Cancelar selección</string>
@@ -137,7 +141,7 @@
     <string name="toast_securebytes_fail">SecureBytes FALLIDA — ver registro</string>
 
     <string name="argon2_header">Autoprueba de Argon2id (KDF de memoria intensiva)</string>
-    <string name="argon2_subtitle">Deriva una clave de 32 bytes a partir de \"password\"+\"somesalt12345678\" dos veces con los mismos parámetros (deben coincidir) y luego una vez con una sal distinta (debe diferir). Usa 4 MiB / 2 iteraciones / 1 hilo para una validación rápida de desarrollo; los parámetros de producción son 64 MiB / 3 / 4.</string>
+    <string name="argon2_subtitle">Deriva una clave de 32 bytes a partir de \"password\"+\"somesalt12345678\" dos veces con los mismos parámetros (deben coincidir) y luego una vez con una sal distinta (debe diferir). Usa 4 MiB / 2 iteraciones / 1 hilo para una validación rápida de desarrollo; los parámetros de producción son 64 MiB / 3 iteraciones / 4 hilos para una contraseña y 128 MiB / 5 / 4 para un PIN.</string>
     <string name="btn_run_argon2_test">Ejecutar autoprueba de Argon2id</string>
     <string name="argon2_running">Calculando…</string>
     <string name="toast_argon2_pass">Argon2id SUPERADA — determinismo y sensibilidad a la sal verificados</string>
@@ -165,7 +169,7 @@
     <string name="toast_pwchange_fail">Resistencia del cambio de contraseña FALLIDA — ver registro</string>
 
     <string name="blob_header">Autoprueba de blob de archivo cifrado (cifrado por archivo)</string>
-    <string name="blob_subtitle">Transmite 2 MiB de texto plano aleatorio a través de CipherOutputStream, verifica la estructura en disco (magic + versión + cabecera IV, +36 bytes de sobrecarga), confirma que los bytes cifrados ≠ los bytes en texto plano en el mismo desplazamiento, hace un ciclo completo del archivo mediante descifrado y comprueba el SHA-256, y verifica que se rechacen el texto cifrado alterado, el magic incorrecto y la versión errónea. Usa un alias de PRUEBA del Keystore; la clave maestra de producción no se toca.</string>
+    <string name="blob_subtitle">Cifra 2 MiB de datos aleatorios y comprueba ambos formatos de almacenamiento. El actual, por bloques: el archivo se divide en trozos de 1 MiB, cada uno con su propia etiqueta de integridad — verifica la división y el tamaño, la coincidencia byte a byte tras descifrar, la lectura desde una posición arbitraria a través del límite de un trozo y más allá del final, y que el archivo se rechace si los trozos se intercambian, si se trunca el final o si se altera la cabecera. El formato anterior, que se sigue leyendo para archivos guardados antes: magic, versión y cabecera IV (unos 36 bytes de sobrecarga), bytes cifrados ≠ bytes en claro en la misma posición, comprobación de SHA-256 tras descifrar y rechazo de datos alterados, magic incorrecto o versión errónea. Solo se usan claves de prueba; la clave de trabajo de la caja fuerte no se toca.</string>
     <string name="btn_run_blob_test">Ejecutar autoprueba de ciclo de blob</string>
     <string name="blob_running">Cifrando y descifrando 2 MiB…</string>
     <string name="toast_blob_pass">Ciclo de blob SUPERADO — las 6 propiedades verificadas</string>
@@ -183,4 +187,15 @@
     <string name="export_fixed_folder_unavailable">La carpeta guardada no está disponible ahora — elige dónde exportar</string>
     <string name="import_picker_progress_title">Importando a la caja fuerte</string>
     <string name="import_canceled">Importación cancelada</string>
+    <string name="import_vault_locked">La caja fuerte estaba bloqueada: no se importó nada. Desbloquéala e inténtalo de nuevo.</string>
+    <string name="vault_key_header">Clave de la caja fuerte</string>
+    <string name="vault_key_subtitle">Dónde se guarda la clave que abre esta caja fuerte</string>
+    <string name="vault_key_current">Clave de la caja fuerte: %1$s</string>
+    <string name="vault_key_new">Una clave nueva obtendría: %1$s</string>
+    <string name="vault_key_absent">aún no creada</string>
+    <string name="vault_key_checking">comprobando…</string>
+    <string name="vault_key_unavailable">no disponible (%1$s)</string>
+    <string name="vault_key_tier_strongbox">StrongBox</string>
+    <string name="vault_key_tier_tee">TEE</string>
+    <string name="vault_key_tier_software">protección por software</string>
 </resources>

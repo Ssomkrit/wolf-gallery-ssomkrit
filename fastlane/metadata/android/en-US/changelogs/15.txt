@@ -1,0 +1,9 @@
+Every file can now show what it carries. The details dialog reads the shot out of the photo itself — date taken, camera, aperture, shutter, ISO, focal length, flash and coordinates — and a second screen opens the file completely: EXIF, IPTC, the ICC profile, XMP, the chunks of a PNG and the container of a video. Blocks that are closed or specific to one vendor are listed by name and size and never opened.
+
+New ways to sort: by size, largest or smallest first, by album across the whole vault, and at random. Every section still remembers its own choice.
+
+A file arriving under a name that is already taken is now recognised on every import route, so the question about a duplicate is asked whenever it should be.
+
+The chunked encryption format has been stabilised and anything still kept in the older format is rewritten to the current one. An import that runs into a locked vault now stops cleanly and leaves nothing behind.
+
+Interface fixes and corrections throughout, with translations updated to match.

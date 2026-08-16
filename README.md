@@ -57,13 +57,13 @@ And this is only the beginning — **Wolf Gallery is actively evolving, with a l
 - **Groups & albums** — build albums and groups directly inside Wolf Gallery, then move albums into whichever group fits.
 - **Rename freely** — relabel any group, album, or individual file.
 - **Emoji in names** — drop emoji and symbols into the names of groups, albums, and files.
-- **Order & sorting** — arrange and sort your groups, albums, and files to taste.
+- **Order & sorting** — arrange and sort your groups, albums, and files to taste: by date, by name, by size, shuffled, or — across the whole vault — grouped by the album a file lives in. Each section remembers its own choice.
 - **Search** — find groups, albums, and files by name.
 - **Pinning** — pin and unpin groups and albums to keep favorites within reach.
 - **Album covers** — set any picture as a cover and frame the exact part of it you want on display.
 - **Import & export** — bring files and albums in from the device, or send them back out — you decide where your media lives. A whole group can be exported in one go, as a folder with one subfolder per album.
-- **Name conflicts, your call** — importing a device folder whose name is already taken asks whether to skip it, add the files to the existing album, or import under a different name, before anything is decrypted.
-- **Media details** — every file can show what it carries: name, format, dimensions, encrypted size, and — for photos that have it — the shot itself, read out of the EXIF the vault preserved: date taken, camera, aperture, shutter, ISO, focal length, flash, and coordinates. The file is read straight from the vault, decrypted in memory only while the dialog is open.
+- **Name conflicts, your call** — importing a device folder whose name is already taken asks whether to skip it, add the files to the existing album, or import under a different name. A file landing in an album that already holds that name asks the same, with an apply-to-all option. Every question is answered before the first byte is encrypted, so cancelling there leaves the vault untouched.
+- **Media details** — every file can show what it carries: name, format, dimensions, encrypted size, and — for photos that have it — the shot itself, read out of the EXIF the vault preserved: date taken, camera, aperture, shutter, ISO, focal length, flash, and coordinates. A second screen opens the file completely: every EXIF tag, IPTC, the ICC profile, XMP as plain text, the chunks of a PNG and the container of a video. Blocks that are closed or specific to one vendor are listed by name and size and never opened. The file is read straight from the vault, decrypted in memory only while the screen is open.
 - **Share from the vault** — send any file to another app right from inside Wolf Gallery, with no need to drop it into open storage first.
 - **Set as wallpaper** — apply a picture to your home screen straight from the gallery.
 

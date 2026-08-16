@@ -2,8 +2,8 @@ package dev.encgallery.gallery
 
 import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import dev.encgallery.crypto.KeystoreAesGcm
+import dev.encgallery.crypto.VaultLockedException
 import dev.encgallery.logging.EncLog
 import dev.encgallery.storage.EncryptedFileBlob
 import java.io.ByteArrayInputStream
@@ -50,11 +50,11 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
 
     suspend fun importAll(
         context: Context,
-        uris: List<Uri>,
+        items: List<PlannedImport>,
         targetAlbumUuid: String = VaultPaths.IMPORTED_ALBUM_UUID,
         onProgress: suspend (Progress) -> Unit
     ) {
-        val total = uris.size
+        val total = items.size
         onProgress(Progress.Started(total))
         EncLog.i(TAG, "import batch starting: $total file(s) → album=$targetAlbumUuid")
 
@@ -63,11 +63,12 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
         var failed = 0
         val landed = ArrayList<Pair<java.io.File, java.io.File>>()
 
-        uris.forEachIndexed { index, uri ->
+        items.forEachIndexed { index, item ->
 
             coroutineContext.ensureActive()
 
-            val displayName = queryDisplayName(context, uri) ?: uri.lastPathSegment ?: "<unknown>"
+            val uri = item.uri
+            val displayName = item.storedName
             val humanIndex = index + 1
             onProgress(Progress.FileStarted(humanIndex, total, displayName))
 
@@ -117,7 +118,7 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
                 entries.saveImported(
                     blobFile = names.blob,
                     uuid = names.uuid,
-                    originalFilename = displayName.takeIf { it != "<unknown>" }
+                    originalFilename = displayName
                 )
                 landed.add(names.blob to names.thumb)
 
@@ -128,6 +129,15 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
 
                 cleanupBlobPair(names.blob, names.thumb)
                 EncLog.i(TAG, "import cancelled mid-batch on file ${humanIndex}/${total}")
+                rollbackLanded(landed)
+                throw e
+            } catch (e: VaultLockedException) {
+
+                cleanupBlobPair(names.blob, names.thumb)
+                EncLog.w(
+                    TAG,
+                    "vault locked mid-batch at file ${humanIndex}/${total} — nothing more imported"
+                )
                 rollbackLanded(landed)
                 throw e
             } catch (t: Throwable) {
@@ -234,18 +244,6 @@ class PhotoImporter(private val keystore: KeystoreAesGcm) {
             }
         } catch (t: Throwable) {
             EncLog.w(TAG, "sniff(uri) failed: ${t.javaClass.simpleName}")
-            null
-        }
-
-        private fun queryDisplayName(context: Context, uri: Uri): String? = try {
-            context.contentResolver.query(
-                uri,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null, null, null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            }
-        } catch (_: Throwable) {
             null
         }
     }

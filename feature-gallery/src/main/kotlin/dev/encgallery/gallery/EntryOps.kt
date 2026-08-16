@@ -87,11 +87,11 @@ object EntryOps {
 
         return try {
             val plain = blob.decryptToBytes(entry.blobFile)
-            blob.encrypt(ByteArrayInputStream(plain), destBlob)
+            blob.encryptEnvelope(ByteArrayInputStream(plain), destBlob)
 
             if (entry.thumbFile.exists()) {
                 val thumbPlain = blob.decryptToBytes(entry.thumbFile)
-                blob.encrypt(ByteArrayInputStream(thumbPlain), destThumb)
+                blob.encryptEnvelope(ByteArrayInputStream(thumbPlain), destThumb)
             }
 
             val srcMeta = entries.getMeta(entry.blobFile)

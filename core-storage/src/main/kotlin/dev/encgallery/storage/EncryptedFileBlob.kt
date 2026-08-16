@@ -6,6 +6,7 @@ import dev.encgallery.logging.EncLog
 import dev.encgallery.nativec.NativeCrypto
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.EOFException
@@ -238,6 +239,50 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
         return version to iv
     }
 
+    fun isLegacyV1(file: File): Boolean = try {
+        readVersionByte(file) == VERSION_1
+    } catch (_: Throwable) {
+        false
+    }
+
+    fun rewriteSmallFileToEnvelope(file: File, maxBytes: Long = 32L * 1024 * 1024): Boolean {
+        if (!file.isFile) return false
+        if (file.length() > maxBytes) return false
+        if (!isLegacyV1(file)) return true
+
+        val plain = try {
+            decryptToBytes(file)
+        } catch (t: Throwable) {
+            EncLog.w(TAG, "rewrite: decrypt failed for ${file.name}: ${t.javaClass.simpleName} — left as is")
+            return false
+        }
+        val tmp = File(file.parentFile, "${file.name}.envtmp")
+        val originalMtime = file.lastModified()
+        return try {
+            ByteArrayInputStream(plain).use { src -> encryptEnvelope(src, tmp) }
+            val check = decryptToBytes(tmp)
+            if (!check.contentEquals(plain)) {
+                EncLog.w(TAG, "rewrite VERIFY MISMATCH ${file.name} — left as is")
+                return false
+            }
+            java.nio.file.Files.move(
+                tmp.toPath(), file.toPath(),
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            )
+            if (originalMtime > 0L) file.setLastModified(originalMtime)
+            true
+        } catch (t: Throwable) {
+            EncLog.w(TAG, "rewrite failed for ${file.name}: ${t.javaClass.simpleName} — left as is")
+            false
+        } finally {
+            if (tmp.exists() && !tmp.delete()) {
+                EncLog.w(TAG, "rewrite: leftover temp ${tmp.name}")
+            }
+            NativeCrypto.secureZero(plain)
+        }
+    }
+
     fun migrateV1ToEnvelope(blobFile: File, scratchDir: File): Boolean {
         val version = try {
             readVersionByte(blobFile)
@@ -260,13 +305,17 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
                 EncLog.w(TAG, "migrate VERIFY MISMATCH ${blobFile.name} — keeping v1")
                 return false
             }
+            val originalMtime = blobFile.lastModified()
             return try {
                 java.nio.file.Files.move(
                     v2Tmp.toPath(), blobFile.toPath(),
                     java.nio.file.StandardCopyOption.ATOMIC_MOVE,
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
                 )
-                EncLog.i(TAG, "migrated ${blobFile.name} v1→v2 (verified)")
+                if (originalMtime > 0L && !blobFile.setLastModified(originalMtime)) {
+                    EncLog.w(TAG, "migrate: could not restore mtime of ${blobFile.name}")
+                }
+                EncLog.i(TAG, "migrated ${blobFile.name} v1→v2 (verified, date kept)")
                 true
             } catch (t: Throwable) {
                 EncLog.w(TAG, "migrate atomic-move failed ${blobFile.name}: ${t.javaClass.simpleName} — keeping v1")

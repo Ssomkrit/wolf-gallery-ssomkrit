@@ -85,7 +85,7 @@ object VaultDataKey {
     }
 
     fun secretKey(): SecretKeySpec {
-        val c = cached ?: error("VaultDataKey not primed — vault must be unlocked first")
+        val c = cached ?: throw VaultLockedException()
         return SecretKeySpec(c, "AES")
     }
 

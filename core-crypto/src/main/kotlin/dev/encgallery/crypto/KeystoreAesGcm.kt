@@ -64,6 +64,8 @@ class KeystoreAesGcm(private val alias: String) {
         return inspectTier()
     }
 
+    fun tierIfPresent(): HardwareTier? = if (exists()) inspectTier() else null
+
     fun inspectTier(): HardwareTier {
         require(exists()) { "key '$alias' does not exist — call ensureExists first" }
         val key = keystore.getKey(alias, null) as SecretKey

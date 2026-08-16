@@ -160,7 +160,7 @@ class AlbumGroupsRepository(private val keystore: KeystoreAesGcm) {
     }
 
     private fun saveMeta(file: File, meta: AlbumGroupMeta) {
-        blob.encrypt(ByteArrayInputStream(meta.toJsonBytes()), file)
+        blob.encryptEnvelope(ByteArrayInputStream(meta.toJsonBytes()), file)
     }
 
     companion object {

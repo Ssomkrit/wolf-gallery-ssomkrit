@@ -49,6 +49,8 @@ class ShareReceiverActivity : ComponentActivity() {
         }
 
         val uris = extractUris(intent)
+
+        SessionState.lockIfExpired("share arrived after the timeout")
         val unlocked = SessionState.unlocked.value
 
         val outcome = when {
@@ -60,7 +62,7 @@ class ShareReceiverActivity : ComponentActivity() {
         EncLog.i("Share", "received ${uris.size} uri(s), unlocked=$unlocked, outcome=$outcome")
 
         if (outcome == ShareOutcome.IMPORTING) {
-            ImportController.start(applicationContext, uris, null)
+            ImportController.start(applicationContext, uris, null, askOnConflict = false)
         }
 
         setContent {

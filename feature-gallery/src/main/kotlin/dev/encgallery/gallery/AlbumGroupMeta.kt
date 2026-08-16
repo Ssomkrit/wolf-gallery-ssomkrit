@@ -62,4 +62,6 @@ data class AlbumGroupMeta(
 data class AlbumGroupSummary(
     val meta: AlbumGroupMeta,
     val albums: List<AlbumSummary>
-)
+) {
+    val totalBytes: Long get() = albums.sumOf { it.totalBytes }
+}

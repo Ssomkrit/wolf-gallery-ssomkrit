@@ -78,5 +78,6 @@ data class NormalizedRect(val x: Float, val y: Float, val w: Float, val h: Float
 data class AlbumSummary(
     val meta: AlbumMeta,
     val entryCount: Int,
-    val firstEntry: VaultEntry?
+    val firstEntry: VaultEntry?,
+    val totalBytes: Long = 0L
 )

@@ -47,6 +47,8 @@ object AppSettings {
 
     private const val KEY_THUMBNAIL_GEN = "thumbnail_gen"
 
+    private const val KEY_LEGACY_RECORD_GEN = "legacy_record_gen"
+
     private const val KEY_ACTIVE_ICON_VARIANT = "active_icon_variant"
 
     private const val KEY_LIGHT_ACCENT = "light_accent"
@@ -455,6 +457,13 @@ object AppSettings {
     fun setThumbnailGen(gen: Int) {
         prefs.edit().putInt(KEY_THUMBNAIL_GEN, gen).apply()
         EncLog.i("AppSettings", "thumbnailGen set to $gen")
+    }
+
+    fun legacyRecordGen(): Int = prefs.getInt(KEY_LEGACY_RECORD_GEN, 0)
+
+    fun setLegacyRecordGen(gen: Int) {
+        prefs.edit().putInt(KEY_LEGACY_RECORD_GEN, gen).apply()
+        EncLog.i("AppSettings", "legacyRecordGen set to $gen")
     }
 
     private fun persistSortMap(key: String, map: Map<String, Enum<*>>) {

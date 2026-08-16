@@ -145,7 +145,7 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
         val coverThumbFile = VaultPaths.albumCoverThumbFile(context, albumUuid)
         try {
             val thumbJpeg = renderCoverThumbnail(context, coverEntry, cropRect)
-            blob.encrypt(ByteArrayInputStream(thumbJpeg), coverThumbFile)
+            blob.encryptEnvelope(ByteArrayInputStream(thumbJpeg), coverThumbFile)
         } catch (t: Throwable) {
             if (coverThumbFile.exists() && !coverThumbFile.delete()) {
                 EncLog.w(TAG, "setCustomCover cleanup: cover.thumb delete failed for $albumUuid")
@@ -295,7 +295,7 @@ class AlbumsRepository(private val keystore: KeystoreAesGcm) {
 
     private fun saveMeta(file: File, meta: AlbumMeta) {
 
-        blob.encrypt(ByteArrayInputStream(meta.toJsonBytes()), file)
+        blob.encryptEnvelope(ByteArrayInputStream(meta.toJsonBytes()), file)
     }
 
     companion object {

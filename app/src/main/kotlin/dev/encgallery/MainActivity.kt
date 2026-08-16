@@ -62,6 +62,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -128,6 +129,7 @@ import dev.encgallery.gallery.EntryOps
 import dev.encgallery.gallery.EntryBatchOp
 import dev.encgallery.gallery.EntryBatchOutcome
 import dev.encgallery.gallery.EntryConflictResolver
+import dev.encgallery.gallery.FileConflictAsk
 import dev.encgallery.gallery.FileConflictChoice
 import dev.encgallery.gallery.FileConflictDialog
 import dev.encgallery.gallery.FileConflictRequest
@@ -167,7 +169,9 @@ import dev.encgallery.logging.EncLog
 import dev.encgallery.nativec.NativeCrypto
 import dev.encgallery.session.SessionState
 import dev.encgallery.session.wipeVault
+import dev.encgallery.gallery.ImportConflictPlanner
 import dev.encgallery.gallery.ImportController
+import dev.encgallery.gallery.PlannedImport
 import dev.encgallery.gallery.VaultMaintenance
 import dev.encgallery.settings.AppSettings
 import dev.encgallery.settings.ExportDestination
@@ -181,7 +185,9 @@ import dev.encgallery.featuresettings.MedievalIcons
 import dev.encgallery.featuresettings.ThemedIcon
 import dev.encgallery.featuresettings.ThemeVariant
 import dev.encgallery.wizard.ChangePasswordScreen
+import dev.encgallery.wizard.TierProbeResult
 import dev.encgallery.wizard.UnlockScreen
+import dev.encgallery.wizard.probeHardwareTier
 import dev.encgallery.wizard.WizardHost
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -266,9 +272,13 @@ class MainActivity : ComponentActivity() {
                     val activityCtx = LocalContext.current
 
                     val importCanceledText = stringResource(R.string.import_canceled)
+                    val importLockedText = stringResource(R.string.import_vault_locked)
                     LaunchedEffect(ImportController.completedBatches) {
                         if (ImportController.consumeCancellation()) {
                             Toast.makeText(activityCtx, importCanceledText, Toast.LENGTH_SHORT).show()
+                        }
+                        if (ImportController.consumeLockedOut()) {
+                            Toast.makeText(activityCtx, importLockedText, Toast.LENGTH_LONG).show()
                         }
                         val summary = ImportController.consumeSummary()
                         if (summary != null) {
@@ -625,19 +635,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        val backgrounded = SessionState.backgroundedAt
-        val timeoutMin = AppSettings.lockTimeoutMinutes.value
-        if (backgrounded != null && timeoutMin > 0 && SessionState.unlocked.value) {
-            val elapsedMs = System.currentTimeMillis() - backgrounded
-            val timeoutMs = timeoutMin * 60_000L
-            if (elapsedMs >= timeoutMs) {
-                EncLog.i(
-                    "Session",
-                    "auto-lock triggered: idle ${elapsedMs / 1000}s, threshold ${timeoutMin}min"
-                )
-                lockVaultNow()
-            }
-        }
+        SessionState.cancelScheduledLock()
+        SessionState.lockIfExpired("returned to the gallery")
         SessionState.backgroundedAt = null
     }
 
@@ -645,6 +644,7 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         if (SessionState.unlocked.value) {
             SessionState.backgroundedAt = System.currentTimeMillis()
+            SessionState.scheduleLock()
         }
     }
 
@@ -818,6 +818,20 @@ private fun SkeletonContent(
             VaultIndex.migrateFlatToAlbums(context.applicationContext)
         }
 
+        if (AppSettings.legacyRecordGen() < VaultMaintenance.LEGACY_RECORD_GEN) {
+            withContext(Dispatchers.IO) {
+                val failed = VaultMaintenance.rewriteLegacyRecords(
+                    context.applicationContext,
+                    KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS)
+                )
+                if (failed == 0) {
+                    AppSettings.setLegacyRecordGen(VaultMaintenance.LEGACY_RECORD_GEN)
+                }
+            }
+            ThumbnailLoader.clearCache()
+            refreshTrigger++
+        }
+
         if (AppSettings.thumbnailGen() < ThumbnailMigration.CURRENT_GEN) {
             withContext(Dispatchers.IO) {
                 ThumbnailMigration.regenerateAll(
@@ -850,7 +864,8 @@ private fun SkeletonContent(
                 AlbumSummary(
                     meta = displayMeta,
                     entryCount = albumEntries.size,
-                    firstEntry = albumEntries.firstOrNull()
+                    firstEntry = albumEntries.firstOrNull(),
+                    totalBytes = albumEntries.sumOf { it.blobSizeBytes }
                 )
             }
 
@@ -968,9 +983,18 @@ private fun SkeletonContent(
         GallerySession.entryFilenameCacheRevision++
     }
 
+    val albumNamesByUuid: Map<String, String> = remember(albumSummaries) {
+        albumSummaries.associate { it.meta.uuid to it.meta.name }
+    }
+
     val sortedEntries: List<VaultEntry> =
-        remember(entries, entrySortRevision, entrySortOrderState, filenameCacheRevision) {
-            sortEntries(entries, AppSettings.entrySortOrderFor("ALL"), GallerySession.entryFilenameCache)
+        remember(entries, entrySortRevision, entrySortOrderState, filenameCacheRevision, albumNamesByUuid) {
+            sortEntries(
+                entries,
+                AppSettings.entrySortOrderFor("ALL"),
+                GallerySession.entryFilenameCache,
+                albumNamesByUuid
+            )
         }
 
     val albumEntries: List<VaultEntry> =
@@ -1109,20 +1133,32 @@ private fun SkeletonContent(
         }
     }
 
-    val askFileConflict: suspend (String, String, (String) -> Boolean) -> FileConflictResolution =
+    val askFileConflict: FileConflictAsk =
         { name, suggested, nameTaken ->
             val def = CompletableDeferred<FileConflictResolution>()
             withContext(Dispatchers.Main) {
                 fileRenamePending = false
                 fileConflict = FileConflictRequest(name, suggested, nameTaken, def)
             }
-            val decision = def.await()
-            withContext(Dispatchers.Main) {
-                fileConflict = null
-                fileRenamePending = false
+            try {
+                def.await()
+            } finally {
+                withContext(NonCancellable + Dispatchers.Main) {
+                    fileConflict = null
+                    fileRenamePending = false
+                }
             }
-            decision
         }
+
+    DisposableEffect(Unit) {
+        ImportController.conflictAsk = askFileConflict
+        onDispose {
+            ImportController.conflictAsk = null
+            fileConflict?.deferred?.complete(
+                FileConflictResolution(FileConflictChoice.CANCEL, applyToAll = false)
+            )
+        }
+    }
 
     val applyNameCacheChanges: (EntryBatchOutcome) -> Unit = { outcome ->
         outcome.renamed.forEach { (uuid, nm) ->
@@ -2071,7 +2107,54 @@ private fun SkeletonContent(
                             if (cancelledWhilePlanning) " (cancelled at the name dialog)" else ""
                     )
                 }
-                if (cancelledWhilePlanning || plan.isEmpty()) {
+
+                val plannedFiles = ArrayList<Pair<BucketImportPlan, List<PlannedImport>>>()
+                val reservedByAlbum = HashMap<String, MutableSet<String>>()
+                var skippedFiles = 0
+                if (!cancelledWhilePlanning) {
+                    for (item in plan) {
+                        val mergeTarget = item.mergeIntoUuid
+                        val filePlan = withContext(Dispatchers.IO) {
+                            val uris = DeviceMediaBuckets.bucketItemUris(appCtx, item.bucket.id)
+                            if (uris.isEmpty()) {
+                                null
+                            } else if (mergeTarget == null) {
+                                ImportConflictPlanner.straightThrough(appCtx, uris)
+                            } else {
+                                ImportConflictPlanner.plan(
+                                    context = appCtx,
+                                    uris = uris,
+                                    targetAlbumUuid = mergeTarget,
+                                    keystore = keystore,
+                                    ask = askFileConflict,
+                                    reservedNames = reservedByAlbum[mergeTarget].orEmpty()
+                                )
+                            }
+                        } ?: continue
+                        if (filePlan.cancelled) {
+                            cancelledWhilePlanning = true
+                            break
+                        }
+                        skippedFiles += filePlan.skipped
+                        if (filePlan.items.isNotEmpty()) {
+                            plannedFiles.add(item to filePlan.items)
+                            if (mergeTarget != null) {
+                                val reserved = reservedByAlbum.getOrPut(mergeTarget) { HashSet() }
+                                filePlan.items.forEach { planned ->
+                                    planned.storedName?.let { reserved.add(it.trim().lowercase()) }
+                                }
+                            }
+                        }
+                    }
+                    if (skippedFiles > 0) {
+                        EncLog.i(
+                            "MainActivity",
+                            "folder import plan: $skippedFiles file(s) skipped on a name conflict"
+                        )
+                    }
+                }
+
+                if (cancelledWhilePlanning || plannedFiles.isEmpty()) {
                     operationProgress = null
                     ImportController.folderImportUserCancelled = false
                     folderImportPaused = false
@@ -2085,19 +2168,19 @@ private fun SkeletonContent(
                     return@launch
                 }
 
-                val grandTotal = plan.sumOf { it.bucket.count }
+                val grandTotal = plannedFiles.sumOf { it.second.size }
                 var processed = 0
                 var okCount = 0
                 val createdAlbums = mutableListOf<String>()
                 val mergePoints = mutableListOf<MergeRollbackPoint>()
+                val pendingReplacements = mutableListOf<VaultEntry>()
                 try {
-                    for (item in plan) {
+                    for ((item, files) in plannedFiles) {
                         val bucket = item.bucket
                         val title = String.format(importTitleTemplate, item.albumName)
                         operationProgress =
                             folderImportProgress(item.albumName, processed, grandTotal, title)
-                        val uris = DeviceMediaBuckets.bucketItemUris(appCtx, bucket.id)
-                        if (uris.isEmpty()) continue
+                        val landedOk = BooleanArray(files.size)
                         val albumUuid = withContext(Dispatchers.IO) {
                             val target = item.mergeIntoUuid
                             if (target == null) {
@@ -2122,12 +2205,13 @@ private fun SkeletonContent(
                         withContext(Dispatchers.IO) {
                             PhotoImporter(keystore).importAll(
                                 context = appCtx,
-                                uris = uris,
+                                items = files,
                                 targetAlbumUuid = albumUuid
                             ) { prog ->
                                 when (prog) {
                                     is PhotoImporter.Progress.FileSucceeded -> {
                                         okCount++; processed++
+                                        landedOk[prog.index - 1] = true
                                     }
                                     is PhotoImporter.Progress.FileFailed -> processed++
                                     else -> {}
@@ -2143,6 +2227,28 @@ private fun SkeletonContent(
                                 }
                             }
                         }
+                        files.forEachIndexed { fileIndex, planned ->
+                            val victim = planned.replaces
+                            if (victim != null && landedOk[fileIndex]) {
+                                pendingReplacements.add(victim)
+                            }
+                        }
+                    }
+                    if (pendingReplacements.isNotEmpty()) {
+                        withContext(NonCancellable + Dispatchers.IO) {
+                            val repo = EntriesRepository(keystore)
+                            pendingReplacements.forEach { victim ->
+                                repo.deleteMeta(victim.blobFile)
+                                deleteEntryOnDisk(victim)
+                                GallerySession.entryFilenameCache.remove(victim.uuid)
+                                GallerySession.infoProbeCache.remove(victim.uuid)
+                            }
+                            GallerySession.entryFilenameCacheRevision++
+                        }
+                        EncLog.i(
+                            "MainActivity",
+                            "folder import: replaced ${pendingReplacements.size} existing file(s) once their imports landed"
+                        )
                     }
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     if (ImportController.folderImportUserCancelled) {
@@ -3213,14 +3319,17 @@ private fun SkeletonContent(
             SortOptionsDialog(
                 isAlbums = isAlbums,
                 inGroup = albumSectionKey != "ROOT",
+                allowAlbumGrouping = entrySectionKey == "ALL",
 
                 currentAlbumOrder = AppSettings.albumSortOrderFor(albumSectionKey),
                 currentEntryOrder = AppSettings.entrySortOrderFor(entrySectionKey),
                 onAlbumOrderSelected = { newOrder ->
+                    if (newOrder == AlbumSortOrder.RANDOM) rerollShuffleSeed()
                     AppSettings.setAlbumSortOrderFor(albumSectionKey, newOrder)
                     sortDialogIsAlbums = null
                 },
                 onEntryOrderSelected = { newOrder ->
+                    if (newOrder == EntrySortOrder.RANDOM) rerollShuffleSeed()
                     AppSettings.setEntrySortOrderFor(entrySectionKey, newOrder)
                     sortDialogIsAlbums = null
                 },
@@ -3383,11 +3492,80 @@ private fun SkeletonContent(
 }
 
 private fun lockVaultNow() {
-    SessionState.unlocked.value = false
-    dev.encgallery.crypto.VaultDataKey.wipe()
-    dev.encgallery.gallery.ShareMemoryStore.clear()
-    dev.encgallery.gallery.GallerySession.lastViewerBitmap = null
-    ThumbnailLoader.clearCache()
+    SessionState.lockNow("locked by the user")
+}
+
+private sealed interface KeyTierLine {
+    data object Checking : KeyTierLine
+    data object Absent : KeyTierLine
+    data class Known(val tier: KeystoreAesGcm.HardwareTier) : KeyTierLine
+    data class Failed(val reason: String) : KeyTierLine
+}
+
+@Composable
+private fun keyTierLabel(line: KeyTierLine): String = when (line) {
+    KeyTierLine.Checking -> stringResource(R.string.vault_key_checking)
+    KeyTierLine.Absent -> stringResource(R.string.vault_key_absent)
+    is KeyTierLine.Failed -> stringResource(R.string.vault_key_unavailable, line.reason)
+    is KeyTierLine.Known -> when (line.tier) {
+        KeystoreAesGcm.HardwareTier.STRONGBOX -> stringResource(R.string.vault_key_tier_strongbox)
+        KeystoreAesGcm.HardwareTier.TEE -> stringResource(R.string.vault_key_tier_tee)
+        KeystoreAesGcm.HardwareTier.SOFTWARE -> stringResource(R.string.vault_key_tier_software)
+    }
+}
+
+@Composable
+private fun VaultKeyTierSection() {
+    val context = LocalContext.current
+    var current by remember { mutableStateOf<KeyTierLine>(KeyTierLine.Checking) }
+    var projected by remember { mutableStateOf<KeyTierLine>(KeyTierLine.Checking) }
+
+    LaunchedEffect(Unit) {
+        current = withContext(Dispatchers.IO) {
+            try {
+                val tier = KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS).tierIfPresent()
+                if (tier == null) KeyTierLine.Absent else KeyTierLine.Known(tier)
+            } catch (t: Throwable) {
+                KeyTierLine.Failed(t.javaClass.simpleName)
+            }
+        }
+        EncLog.i(
+            "VaultKey",
+            "vault key tier: " + when (val c = current) {
+                is KeyTierLine.Known -> c.tier.name
+                KeyTierLine.Absent -> "no key yet"
+                is KeyTierLine.Failed -> "unreadable (${c.reason})"
+                KeyTierLine.Checking -> "unresolved"
+            }
+        )
+        projected = withContext(Dispatchers.IO) {
+            when (val probe = probeHardwareTier(context.applicationContext)) {
+                is TierProbeResult.Done -> KeyTierLine.Known(probe.tier)
+                is TierProbeResult.Error -> KeyTierLine.Failed(probe.reason)
+                TierProbeResult.Probing -> KeyTierLine.Checking
+            }
+        }
+    }
+
+    Text(
+        text = stringResource(R.string.vault_key_header),
+        style = MaterialTheme.typography.titleMedium
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text = stringResource(R.string.vault_key_subtitle),
+        style = MaterialTheme.typography.bodySmall
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = stringResource(R.string.vault_key_current, keyTierLabel(current)),
+        style = MaterialTheme.typography.bodyMedium
+    )
+    Spacer(Modifier.height(2.dp))
+    Text(
+        text = stringResource(R.string.vault_key_new, keyTierLabel(projected)),
+        style = MaterialTheme.typography.bodyMedium
+    )
 }
 
 @Composable
@@ -3399,6 +3577,12 @@ private fun TestsAndLogsContent() {
     var logRefreshTick by remember { mutableIntStateOf(0) }
     val logSize = remember(logRefreshTick) { EncLog.currentSize() }
     val tail = remember(logRefreshTick) { EncLog.tail(n = 15) }
+
+    VaultKeyTierSection()
+
+    Spacer(Modifier.height(20.dp))
+    HorizontalDivider()
+    Spacer(Modifier.height(12.dp))
 
     Text(
         text = stringResource(R.string.native_header),
@@ -4261,6 +4445,7 @@ private fun SkeletonPreview() {
 private fun SortOptionsDialog(
     isAlbums: Boolean,
     inGroup: Boolean,
+    allowAlbumGrouping: Boolean,
     currentAlbumOrder: AlbumSortOrder,
     currentEntryOrder: EntrySortOrder,
     onAlbumOrderSelected: (AlbumSortOrder) -> Unit,
@@ -4288,13 +4473,15 @@ private fun SortOptionsDialog(
                         )
                     }
                 } else {
-                    EntrySortOrder.values().forEach { value ->
-                        SortOptionRow(
-                            label = stringResource(entrySortOptionLabel(value)),
-                            selected = value == currentEntryOrder,
-                            onClick = { onEntryOrderSelected(value) }
-                        )
-                    }
+                    EntrySortOrder.values()
+                        .filter { allowAlbumGrouping || it != EntrySortOrder.ALBUM }
+                        .forEach { value ->
+                            SortOptionRow(
+                                label = stringResource(entrySortOptionLabel(value)),
+                                selected = value == currentEntryOrder,
+                                onClick = { onEntryOrderSelected(value) }
+                            )
+                        }
                 }
             }
         },
@@ -4353,11 +4540,22 @@ private fun HostSelectionTopBar(
     }
 }
 
+private fun rerollShuffleSeed() {
+    GallerySession.sortShuffleSeed = kotlin.random.Random.nextLong()
+
+    AppSettings.entrySortRevision.intValue++
+    AppSettings.albumSortRevision.intValue++
+    EncLog.i("Sort", "random order reshuffled")
+}
+
 private fun albumSortOptionLabel(order: AlbumSortOrder): Int = when (order) {
     AlbumSortOrder.DATE_DESC -> R.string.sort_option_date_desc
     AlbumSortOrder.DATE_ASC -> R.string.sort_option_date_asc
     AlbumSortOrder.NAME_AZ -> R.string.sort_option_name_az
     AlbumSortOrder.NAME_ZA -> R.string.sort_option_name_za
+    AlbumSortOrder.SIZE_DESC -> R.string.sort_option_size_desc
+    AlbumSortOrder.SIZE_ASC -> R.string.sort_option_size_asc
+    AlbumSortOrder.RANDOM -> R.string.sort_option_random
 }
 
 private fun entrySortOptionLabel(order: EntrySortOrder): Int = when (order) {
@@ -4365,4 +4563,8 @@ private fun entrySortOptionLabel(order: EntrySortOrder): Int = when (order) {
     EntrySortOrder.DATE_ASC -> R.string.sort_option_date_asc
     EntrySortOrder.NAME_AZ -> R.string.sort_option_name_az
     EntrySortOrder.NAME_ZA -> R.string.sort_option_name_za
+    EntrySortOrder.SIZE_DESC -> R.string.sort_option_size_desc
+    EntrySortOrder.SIZE_ASC -> R.string.sort_option_size_asc
+    EntrySortOrder.ALBUM -> R.string.sort_option_album
+    EntrySortOrder.RANDOM -> R.string.sort_option_random
 }

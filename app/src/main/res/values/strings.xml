@@ -34,6 +34,10 @@
     <string name="sort_option_date_asc">Date (oldest first)</string>
     <string name="sort_option_name_az">Name (A–Z)</string>
     <string name="sort_option_name_za">Name (Z–A)</string>
+    <string name="sort_option_size_desc">Size (largest first)</string>
+    <string name="sort_option_size_asc">Size (smallest first)</string>
+    <string name="sort_option_album">By album</string>
+    <string name="sort_option_random">Random</string>
     <string name="sort_dialog_btn_close">Close</string>
 
     <string name="selection_cancel">Cancel selection</string>
@@ -110,7 +114,7 @@
     <string name="toast_securebytes_fail">SecureBytes FAILED — see log</string>
 
     <string name="argon2_header">Argon2id self-test (memory-hard KDF)</string>
-    <string name="argon2_subtitle">Derives a 32-byte key from \"password\"+\"somesalt12345678\" twice with the same params (must match), then once with a different salt (must differ). Uses 4 MiB / 2 iters / 1 thread for fast dev validation; production params are 64 MiB / 3 / 4.</string>
+    <string name="argon2_subtitle">Derives a 32-byte key from \"password\"+\"somesalt12345678\" twice with the same params (must match), then once with a different salt (must differ). Uses 4 MiB / 2 iters / 1 thread for fast dev validation; production params are 64 MiB / 3 iters / 4 threads for a password and 128 MiB / 5 / 4 for a PIN.</string>
     <string name="btn_run_argon2_test">Run Argon2id self-test</string>
     <string name="argon2_running">Computing…</string>
     <string name="toast_argon2_pass">Argon2id PASSED — determinism + salt-sensitivity verified</string>
@@ -138,7 +142,7 @@
     <string name="toast_pwchange_fail">Password-change crash-safety FAILED — see log</string>
 
     <string name="blob_header">Encrypted file blob self-test (per-file crypto)</string>
-    <string name="blob_subtitle">Streams 2 MiB of random plaintext through CipherOutputStream, verifies the on-disk layout (magic + version + IV header, +36 bytes overhead), confirms ciphertext bytes ≠ plaintext bytes at the same offset, round-trips the file via decrypt and matches SHA-256, and checks that tampered ciphertext / bad magic / wrong version are all rejected. Uses a TEST Keystore alias; production master key is not touched.</string>
+    <string name="blob_subtitle">Streams 2 MiB of random plaintext and checks both storage formats. Current chunked format: the file is split into 1 MiB chunks, each with its own integrity tag — verifies the chunk layout and size, a byte-exact round trip, random access across a chunk boundary and past the end, and that the file is rejected when chunks are swapped, when the tail is truncated, or when the header is altered. Legacy format, still read for previously stored files: magic, version and IV header (about 36 bytes of overhead), ciphertext bytes ≠ plaintext bytes at the same offset, SHA-256 match after decryption, and rejection of tampered data, bad magic or wrong version. Uses test keys only; the working vault key is not touched.</string>
     <string name="btn_run_blob_test">Run blob round-trip self-test</string>
     <string name="blob_running">Encrypting + decrypting 2 MiB…</string>
     <string name="toast_blob_pass">Blob round-trip PASSED — all 6 properties verified</string>
@@ -184,4 +188,15 @@
     <string name="export_fixed_folder_unavailable">Saved folder is unavailable right now — choose where to export</string>
     <string name="import_picker_progress_title">Importing to vault</string>
     <string name="import_canceled">Import cancelled</string>
+    <string name="import_vault_locked">The vault was locked — nothing was imported. Unlock and try again.</string>
+    <string name="vault_key_header">Vault key</string>
+    <string name="vault_key_subtitle">Where the key that unwraps this vault is held</string>
+    <string name="vault_key_current">Vault key: %1$s</string>
+    <string name="vault_key_new">A new key would get: %1$s</string>
+    <string name="vault_key_absent">not created yet</string>
+    <string name="vault_key_checking">checking…</string>
+    <string name="vault_key_unavailable">unavailable (%1$s)</string>
+    <string name="vault_key_tier_strongbox">StrongBox</string>
+    <string name="vault_key_tier_tee">TEE</string>
+    <string name="vault_key_tier_software">software-backed</string>
 </resources>
