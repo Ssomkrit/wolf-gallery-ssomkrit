@@ -54,6 +54,8 @@ object GallerySession {
 
     var lastViewerVideoWasPlaying: Boolean = true
 
+    var sortShuffleSeed: Long = 0x57414C46L
+
     val pendingScrollToViewedUuid: androidx.compose.runtime.MutableState<String?> =
         androidx.compose.runtime.mutableStateOf(null)
 
@@ -256,6 +258,7 @@ object GallerySession {
         lastViewerVideoUuid = null
         lastViewerVideoPositionMs = 0
         lastViewerVideoWasPlaying = true
+        sortShuffleSeed = 0x57414C46L
         pendingScrollToViewedUuid.value = null
         lastViewerBitmap = null
         lastSelectedTab = GalleryTab.ALL
@@ -330,7 +333,8 @@ object GallerySession {
 data class EntryInfoProbe(
     val mime: String?,
     val dimensions: Pair<Int, Int>?,
-    val originalFilename: String?
+    val originalFilename: String?,
+    val exif: EntryExif? = null
 )
 
 enum class GalleryTab { ALL, ALBUMS }

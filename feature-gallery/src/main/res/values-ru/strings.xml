@@ -19,6 +19,7 @@
     <string name="gallery_import_done_partial">Импортировано %1$d из %2$d — ошибок: %3$d (см. лог)</string>
 
     <string name="gallery_import_done_all_failed">Все %1$d импортов провалились (см. лог)</string>
+    <string name="gallery_import_done_skipped">Импортировано %1$d из %2$d — пропущено: %3$d</string>
 
     <string name="gallery_grid_header">Содержимое vault\'а (%1$d)</string>
     <string name="gallery_empty">Vault пуст. Импортируйте фото или видео выше.</string>
@@ -273,10 +274,32 @@
     <string name="viewer_info_label_enc_size">Зашифрованный размер</string>
     <string name="viewer_info_label_format">Формат</string>
     <string name="viewer_info_label_dimensions">Размер изображения</string>
+    <string name="viewer_info_label_taken">Дата съёмки</string>
+    <string name="viewer_info_label_camera">Камера</string>
+    <string name="viewer_info_label_exposure">Съёмка</string>
+    <string name="viewer_info_label_flash">Вспышка</string>
+    <string name="viewer_info_label_coords">Координаты</string>
+    <string name="viewer_info_label_exif">EXIF</string>
+    <string name="viewer_info_value_no_exif">В файле нет данных</string>
+    <string name="viewer_info_exif_aperture">ƒ/%1$s</string>
+    <string name="viewer_info_exif_shutter">%1$s с</string>
+    <string name="viewer_info_exif_iso">ISO %1$s</string>
+    <string name="viewer_info_exif_focal">%1$s мм</string>
+    <string name="viewer_info_exif_flash_fired">Сработала</string>
+    <string name="viewer_info_exif_flash_off">Не сработала</string>
     <string name="viewer_info_label_uuid">ID в vault\'е</string>
+    <string name="viewer_info_btn_all_metadata">Все метаданные</string>
+    <string name="viewer_meta_dialog_title">Все метаданные</string>
+    <string name="viewer_meta_section_other">Также в файле</string>
+    <string name="viewer_meta_block_bytes">%1$d байт</string>
+    <string name="viewer_meta_blocks_note">Эти блоки перечислены, но не вскрыты: закрытые и вендорские форматы не разбираются, показаны только факт наличия и размер.</string>
+    <string name="viewer_meta_reading">Чтение…</string>
+    <string name="viewer_meta_empty">В файле нет метаданных.</string>
+    <string name="viewer_meta_unsupported">Для этого формата метаданные пока не читаются.</string>
+    <string name="viewer_meta_truncated">Просмотрено только начало файла.</string>
+    <string name="viewer_meta_btn_back">Назад</string>
     <string name="viewer_info_value_probing">Определение…</string>
     <string name="viewer_info_value_unknown">Неизвестно</string>
-    <string name="viewer_info_privacy_note">Оригинальное имя файла теперь сохраняется в зашифрованной entrymeta (5.5e.5+); сам blob на диске по-прежнему именуется случайным UUID, поэтому plaintext-имена не светятся в файловой системе. EXIF/IPTC/XMP/MakerNotes внутри файла сохраняются БАЙТ-В-БАЙТ внутри зашифрованного blob\'а — они вернутся обратно когда вы делаете Share. Стирание метаданных при импорте (по умолчанию ON, с opt-out) — запланированный шаг.</string>
 
     <string name="viewer_share_chooser">Поделиться через…</string>
 

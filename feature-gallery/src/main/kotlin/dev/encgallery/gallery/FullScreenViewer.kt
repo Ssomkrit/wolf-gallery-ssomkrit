@@ -858,6 +858,14 @@ private class ManagedPlayer(private val source: VideoSource) : RememberObserver 
     private var released = false
 
     @Synchronized
+    fun pauseNow() {
+        if (released) return
+        try {
+            if (player.isPlaying) player.pause()
+        } catch (_: Throwable) {}
+    }
+
+    @Synchronized
     fun release() {
         if (released) return
         released = true
@@ -908,12 +916,15 @@ private fun VideoPlayer(
     var foreground by remember { mutableStateOf(true) }
 
     val playerContext = LocalContext.current
-    DisposableEffect(playerContext) {
+    DisposableEffect(playerContext, holder) {
         val owner = playerContext.findLifecycleOwner()
         val obs = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_START -> foreground = true
-                Lifecycle.Event.ON_STOP -> foreground = false
+                Lifecycle.Event.ON_RESUME -> foreground = true
+                Lifecycle.Event.ON_PAUSE -> {
+                    foreground = false
+                    holder.pauseNow()
+                }
                 else -> {}
             }
         }
@@ -932,11 +943,27 @@ private fun VideoPlayer(
             if (entryUuid == GallerySession.lastViewerVideoUuid) {
                 intendedPlaying = GallerySession.lastViewerVideoWasPlaying
                 val savedPos = GallerySession.lastViewerVideoPositionMs
-                if (savedPos in 1 until durationMs) {
+                val seekable = savedPos >= 1 && (durationMs <= 0 || savedPos < durationMs)
+                if (seekable) {
 
                     scrubbing = true
-                    try { mp.seekTo(savedPos) } catch (_: Throwable) { scrubbing = false }
-                    positionMs = savedPos.toFloat()
+                    val sought = try {
+                        mp.seekTo(savedPos.toLong(), MediaPlayer.SEEK_CLOSEST)
+                        true
+                    } catch (_: Throwable) {
+                        scrubbing = false
+                        false
+                    }
+                    if (sought) positionMs = savedPos.toFloat()
+                    EncLog.i(
+                        "Viewer",
+                        "video resume ${entryUuid}: seek to ${savedPos}ms of ${durationMs}ms, accepted=$sought"
+                    )
+                } else {
+                    EncLog.i(
+                        "Viewer",
+                        "video resume ${entryUuid}: no seek (saved=${savedPos}ms, duration=${durationMs}ms)"
+                    )
                 }
             }
             prepared = true
@@ -974,10 +1001,16 @@ private fun VideoPlayer(
         }
         onDispose {
 
+            val exact = try { player.currentPosition } catch (_: Throwable) { 0 }
+            val saved = if (exact > 0) exact else positionMs.toInt()
             GallerySession.lastViewerVideoUuid = entryUuid
-            GallerySession.lastViewerVideoPositionMs = positionMs.toInt()
+            GallerySession.lastViewerVideoPositionMs = saved
 
             GallerySession.lastViewerVideoWasPlaying = intendedPlaying
+            EncLog.i(
+                "Viewer",
+                "video leaving $entryUuid at ${saved}ms (player=${exact}ms, shown=${positionMs.toInt()}ms)"
+            )
             holder.release()
         }
     }
@@ -1345,6 +1378,7 @@ private fun EntryInfoDialog(
     var originalFilename by remember(entry.uuid) {
         mutableStateOf(cached?.originalFilename)
     }
+    var exif by remember(entry.uuid) { mutableStateOf(cached?.exif) }
     var probing by remember(entry.uuid) { mutableStateOf(cached == null) }
 
     LaunchedEffect(entry.uuid) {
@@ -1373,7 +1407,8 @@ private fun EntryInfoDialog(
                 EntryInfoProbe(
                     mime = mimeOut,
                     dimensions = dimsOut,
-                    originalFilename = resolvedName
+                    originalFilename = resolvedName,
+                    exif = ExifProbe.read(bytes, mimeOut)
                 )
             } catch (t: Throwable) {
                 EncLog.w(
@@ -1390,6 +1425,7 @@ private fun EntryInfoDialog(
         mime = probe.mime
         dimensions = probe.dimensions
         originalFilename = probe.originalFilename
+        exif = probe.exif
         probing = false
 
         GallerySession.infoProbeCache[entry.uuid] = probe
@@ -1400,9 +1436,60 @@ private fun EntryInfoDialog(
         java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
             .format(java.util.Date(entry.mtimeMillis))
     }
+    val dateTaken = remember(exif?.takenAtMillis) {
+        exif?.takenAtMillis?.let { millis ->
+            java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                .format(java.util.Date(millis))
+        }
+    }
+    val exposure = remember(exif) {
+        exif?.let { data ->
+            val parts = mutableListOf<String>()
+            data.apertureF?.let {
+                parts += context.getString(
+                    R.string.viewer_info_exif_aperture,
+                    ExifProbe.formatDecimal(it)
+                )
+            }
+            data.exposureSeconds?.let {
+                parts += context.getString(
+                    R.string.viewer_info_exif_shutter,
+                    ExifProbe.formatShutter(it)
+                )
+            }
+            data.iso?.let {
+                parts += context.getString(R.string.viewer_info_exif_iso, it.toString())
+            }
+            data.focalMm?.let {
+                parts += context.getString(
+                    R.string.viewer_info_exif_focal,
+                    ExifProbe.formatDecimal(it)
+                )
+            }
+            parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+        }
+    }
+    val coordinates = remember(exif) {
+        val lat = exif?.latitude
+        val lon = exif?.longitude
+        if (lat != null && lon != null) ExifProbe.formatCoordinates(lat, lon) else null
+    }
+    val isImage = mime?.startsWith("image/") == true
+    val isVideo = mime?.startsWith("video/") == true
+    var showAllMetadata by remember(entry.uuid) { mutableStateOf(false) }
+
+    if (showAllMetadata) {
+        EntryMetadataDialog(
+            entry = entry,
+            mime = mime,
+            onBack = { showAllMetadata = false }
+        )
+        return
+    }
 
     InWindowDialog(
         onDismiss = onDismiss,
+        stableFrame = true,
         title = { Text(stringResource(R.string.viewer_info_dialog_title)) },
         text = {
             Column {
@@ -1439,11 +1526,66 @@ private fun EntryInfoDialog(
                         else -> stringResource(R.string.viewer_info_value_unknown)
                     }
                 )
+                if (!probing && isImage) {
+                    val shot = exif
+                    if (shot == null || shot.isEmpty) {
+                        InfoRow(
+                            label = stringResource(R.string.viewer_info_label_exif),
+                            value = stringResource(R.string.viewer_info_value_no_exif)
+                        )
+                    } else {
+                        dateTaken?.let {
+                            InfoRow(
+                                label = stringResource(R.string.viewer_info_label_taken),
+                                value = it
+                            )
+                        }
+                        shot.camera?.let {
+                            InfoRow(
+                                label = stringResource(R.string.viewer_info_label_camera),
+                                value = it
+                            )
+                        }
+                        exposure?.let {
+                            InfoRow(
+                                label = stringResource(R.string.viewer_info_label_exposure),
+                                value = it
+                            )
+                        }
+                        shot.flashFired?.let {
+                            InfoRow(
+                                label = stringResource(R.string.viewer_info_label_flash),
+                                value = stringResource(
+                                    if (it) {
+                                        R.string.viewer_info_exif_flash_fired
+                                    } else {
+                                        R.string.viewer_info_exif_flash_off
+                                    }
+                                )
+                            )
+                        }
+                        coordinates?.let {
+                            InfoRow(
+                                label = stringResource(R.string.viewer_info_label_coords),
+                                value = it,
+                                monospace = true
+                            )
+                        }
+                    }
+                }
                 InfoRow(
                     label = stringResource(R.string.viewer_info_label_uuid),
                     value = entry.uuid.take(8) + "…",
                     monospace = true
                 )
+                if (isImage || isVideo) {
+                    TextButton(
+                        onClick = { showAllMetadata = true },
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Text(stringResource(R.string.viewer_info_btn_all_metadata))
+                    }
+                }
             }
         },
         confirmButton = {
@@ -1451,6 +1593,110 @@ private fun EntryInfoDialog(
                 Text(stringResource(R.string.gallery_action_btn_close))
             }
         }
+    )
+}
+
+@Composable
+private fun EntryMetadataDialog(
+    entry: VaultEntry,
+    mime: String?,
+    onBack: () -> Unit
+) {
+    var scan by remember(entry.uuid) { mutableStateOf<FileMetadata?>(null) }
+
+    LaunchedEffect(entry.uuid) {
+        scan = withContext(Dispatchers.IO) {
+            try {
+                val blob = EncryptedFileBlob(KeystoreAesGcm(KeystoreAesGcm.PRODUCTION_ALIAS))
+                val bytes = blob.peekPlaintext(entry.blobFile, INFO_PROBE_BYTES)
+                val tail = if (mime != null && mime.startsWith("video/")) {
+                    blob.peekTail(entry.blobFile, META_TAIL_BYTES)
+                } else {
+                    null
+                }
+                MetadataScan.scan(bytes, mime, tail)
+            } catch (t: Throwable) {
+                EncLog.w(
+                    "Viewer",
+                    "metadata scan failed for ${entry.uuid}: ${t.javaClass.simpleName}"
+                )
+                FileMetadata(supported = true)
+            }
+        }
+    }
+
+    InWindowDialog(
+        onDismiss = onBack,
+        stableFrame = true,
+        title = { Text(stringResource(R.string.viewer_meta_dialog_title)) },
+        text = {
+            val result = scan
+            Column {
+                when {
+                    result == null -> InfoNote(stringResource(R.string.viewer_meta_reading))
+                    !result.supported -> InfoNote(stringResource(R.string.viewer_meta_unsupported))
+                    result.isEmpty -> InfoNote(stringResource(R.string.viewer_meta_empty))
+                    else -> {
+                        result.groups.forEach { group ->
+                            MetaSectionTitle(group.name)
+                            group.entries.forEach { row ->
+                                InfoRow(label = row.name, value = row.value, monospace = true)
+                            }
+                        }
+                        result.xmp?.let { packet ->
+                            MetaSectionTitle("XMP")
+                            Text(
+                                text = packet,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        if (result.blocks.isNotEmpty()) {
+                            MetaSectionTitle(stringResource(R.string.viewer_meta_section_other))
+                            result.blocks.forEach { block ->
+                                InfoRow(
+                                    label = block.name,
+                                    value = stringResource(
+                                        R.string.viewer_meta_block_bytes,
+                                        block.bytes
+                                    )
+                                )
+                            }
+                            InfoNote(stringResource(R.string.viewer_meta_blocks_note))
+                        }
+                        if (result.truncated) {
+                            InfoNote(stringResource(R.string.viewer_meta_truncated))
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onBack) {
+                Text(stringResource(R.string.viewer_meta_btn_back))
+            }
+        }
+    )
+}
+
+@Composable
+private fun MetaSectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
+    )
+}
+
+@Composable
+private fun InfoNote(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp)
     )
 }
 
@@ -1670,6 +1916,8 @@ private const val CHROME_ANIM_MS = 180
 private const val VIDEO_SETTLE_DELAY_MS = 280L
 
 private const val INFO_PROBE_BYTES = 2 * 1024 * 1024
+
+private const val META_TAIL_BYTES = 512 * 1024
 
 private val videoDecryptGate = Mutex()
 

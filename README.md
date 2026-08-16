@@ -63,6 +63,7 @@ And this is only the beginning — **Wolf Gallery is actively evolving, with a l
 - **Album covers** — set any picture as a cover and frame the exact part of it you want on display.
 - **Import & export** — bring files and albums in from the device, or send them back out — you decide where your media lives. A whole group can be exported in one go, as a folder with one subfolder per album.
 - **Name conflicts, your call** — importing a device folder whose name is already taken asks whether to skip it, add the files to the existing album, or import under a different name, before anything is decrypted.
+- **Media details** — every file can show what it carries: name, format, dimensions, encrypted size, and — for photos that have it — the shot itself, read out of the EXIF the vault preserved: date taken, camera, aperture, shutter, ISO, focal length, flash, and coordinates. The file is read straight from the vault, decrypted in memory only while the dialog is open.
 - **Share from the vault** — send any file to another app right from inside Wolf Gallery, with no need to drop it into open storage first.
 - **Set as wallpaper** — apply a picture to your home screen straight from the gallery.
 

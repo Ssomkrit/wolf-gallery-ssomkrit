@@ -15,6 +15,7 @@
     <string name="gallery_import_done_ok">تم استيراد %1$d من %2$d</string>
     <string name="gallery_import_done_partial">تم استيراد %1$d من %2$d — فشل %3$d (راجع السجل)</string>
     <string name="gallery_import_done_all_failed">فشل استيراد كل الـ %1$d (راجع السجل)</string>
+    <string name="gallery_import_done_skipped">تم استيراد %1$d من %2$d — تم تخطي %3$d</string>
 
     <string name="gallery_grid_header">محتوى الخزنة (%1$d)</string>
     <string name="gallery_empty">الخزنة فارغة. استورد صورًا أو مقاطع فيديو من الأعلى.</string>
@@ -290,10 +291,32 @@
     <string name="viewer_info_label_enc_size">الحجم المشفّر</string>
     <string name="viewer_info_label_format">الصيغة</string>
     <string name="viewer_info_label_dimensions">الأبعاد</string>
+    <string name="viewer_info_label_taken">تاريخ الالتقاط</string>
+    <string name="viewer_info_label_camera">الكاميرا</string>
+    <string name="viewer_info_label_exposure">التعريض</string>
+    <string name="viewer_info_label_flash">الفلاش</string>
+    <string name="viewer_info_label_coords">الإحداثيات</string>
+    <string name="viewer_info_label_exif">EXIF</string>
+    <string name="viewer_info_value_no_exif">لا توجد بيانات في الملف</string>
+    <string name="viewer_info_exif_aperture">ƒ/%1$s</string>
+    <string name="viewer_info_exif_shutter">%1$s ث</string>
+    <string name="viewer_info_exif_iso">ISO %1$s</string>
+    <string name="viewer_info_exif_focal">%1$s مم</string>
+    <string name="viewer_info_exif_flash_fired">انطلق</string>
+    <string name="viewer_info_exif_flash_off">لم ينطلق</string>
     <string name="viewer_info_label_uuid">معرّف الخزنة</string>
+    <string name="viewer_info_btn_all_metadata">كل البيانات الوصفية</string>
+    <string name="viewer_meta_dialog_title">كل البيانات الوصفية</string>
+    <string name="viewer_meta_section_other">موجود أيضًا في الملف</string>
+    <string name="viewer_meta_block_bytes">%1$d بايت</string>
+    <string name="viewer_meta_blocks_note">هذه الكتل مذكورة ولكنها لم تُفتح: الصيغ المغلقة والخاصة بالمصنّع لا تُحلل أبدًا، ويُعرض وجودها وحجمها فقط.</string>
+    <string name="viewer_meta_reading">جارٍ القراءة…</string>
+    <string name="viewer_meta_empty">لا يحمل الملف بيانات وصفية.</string>
+    <string name="viewer_meta_unsupported">لا تُقرأ البيانات الوصفية لهذه الصيغة بعد.</string>
+    <string name="viewer_meta_truncated">تمت مراجعة بداية الملف فقط.</string>
+    <string name="viewer_meta_btn_back">رجوع</string>
     <string name="viewer_info_value_probing">جارٍ الفحص…</string>
     <string name="viewer_info_value_unknown">غير معروف</string>
-    <string name="viewer_info_privacy_note">يُحفظ اسم الملف الأصلي في entrymeta المشفّر (5.5e.5+)؛ ويظل البلوب على القرص يستخدم UUID عشوائيًا، فلا تظهر الأسماء كنص صريح في نظام الملفات أبدًا. أما بيانات EXIF/IPTC/XMP/MakerNotes داخل الملف فتُحفظ بايتًا ببايت داخل البلوب المشفّر — وتعود عند مشاركة الملف للخارج. وإزالة البيانات الوصفية عند الاستيراد (مفعّلة افتراضيًا مع إمكان الإيقاف) خطوة مخطّطة.</string>
 
     <string name="viewer_share_chooser">المشاركة عبر…</string>
 

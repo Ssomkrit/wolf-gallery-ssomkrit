@@ -15,6 +15,7 @@
     <string name="gallery_import_done_ok">Importados %1$d de %2$d</string>
     <string name="gallery_import_done_partial">Importados %1$d de %2$d — %3$d fallaron (ver registro)</string>
     <string name="gallery_import_done_all_failed">Fallaron las %1$d importaciones (ver registro)</string>
+    <string name="gallery_import_done_skipped">Importados %1$d de %2$d — %3$d omitidos</string>
 
     <string name="gallery_grid_header">Contenido de la caja fuerte (%1$d)</string>
     <string name="gallery_empty">La caja fuerte está vacía. Importa fotos o vídeos arriba.</string>
@@ -238,10 +239,32 @@
     <string name="viewer_info_label_enc_size">Tamaño cifrado</string>
     <string name="viewer_info_label_format">Formato</string>
     <string name="viewer_info_label_dimensions">Dimensiones</string>
+    <string name="viewer_info_label_taken">Fecha de captura</string>
+    <string name="viewer_info_label_camera">Cámara</string>
+    <string name="viewer_info_label_exposure">Exposición</string>
+    <string name="viewer_info_label_flash">Flash</string>
+    <string name="viewer_info_label_coords">Coordenadas</string>
+    <string name="viewer_info_label_exif">EXIF</string>
+    <string name="viewer_info_value_no_exif">El archivo no tiene datos</string>
+    <string name="viewer_info_exif_aperture">ƒ/%1$s</string>
+    <string name="viewer_info_exif_shutter">%1$s s</string>
+    <string name="viewer_info_exif_iso">ISO %1$s</string>
+    <string name="viewer_info_exif_focal">%1$s mm</string>
+    <string name="viewer_info_exif_flash_fired">Disparó</string>
+    <string name="viewer_info_exif_flash_off">No disparó</string>
     <string name="viewer_info_label_uuid">ID de la caja fuerte</string>
+    <string name="viewer_info_btn_all_metadata">Todos los metadatos</string>
+    <string name="viewer_meta_dialog_title">Todos los metadatos</string>
+    <string name="viewer_meta_section_other">También en el archivo</string>
+    <string name="viewer_meta_block_bytes">%1$d bytes</string>
+    <string name="viewer_meta_blocks_note">Estos bloques se enumeran pero no se abren: los formatos cerrados y propios de cada fabricante nunca se analizan, solo se muestra su presencia y su tamaño.</string>
+    <string name="viewer_meta_reading">Leyendo…</string>
+    <string name="viewer_meta_empty">El archivo no lleva metadatos.</string>
+    <string name="viewer_meta_unsupported">Los metadatos de este formato aún no se leen.</string>
+    <string name="viewer_meta_truncated">Solo se examinó el principio del archivo.</string>
+    <string name="viewer_meta_btn_back">Atrás</string>
     <string name="viewer_info_value_probing">Sondeando…</string>
     <string name="viewer_info_value_unknown">Desconocido</string>
-    <string name="viewer_info_privacy_note">El nombre original del archivo se conserva en el entrymeta cifrado (5.5e.5+); el blob en disco sigue usando un UUID aleatorio, así que los nombres en texto plano nunca aparecen en el sistema de archivos. Los metadatos EXIF/IPTC/XMP/MakerNotes dentro del archivo SÍ se conservan byte a byte dentro del blob cifrado: reaparecen cuando compartes el archivo. Eliminar los metadatos al importar (activado por defecto, con opción de desactivarlo) es un paso planificado.</string>
 
     <string name="viewer_share_chooser">Compartir mediante…</string>
 

@@ -19,6 +19,7 @@
     <string name="gallery_import_done_partial">Imported %1$d of %2$d — %3$d failed (see log)</string>
 
     <string name="gallery_import_done_all_failed">All %1$d imports failed (see log)</string>
+    <string name="gallery_import_done_skipped">Imported %1$d of %2$d — %3$d skipped</string>
 
     <string name="gallery_grid_header">Vault contents (%1$d)</string>
     <string name="gallery_empty">Vault is empty. Import photos or videos above.</string>
@@ -247,10 +248,32 @@
     <string name="viewer_info_label_enc_size">Encrypted size</string>
     <string name="viewer_info_label_format">Format</string>
     <string name="viewer_info_label_dimensions">Dimensions</string>
+    <string name="viewer_info_label_taken">Date taken</string>
+    <string name="viewer_info_label_camera">Camera</string>
+    <string name="viewer_info_label_exposure">Exposure</string>
+    <string name="viewer_info_label_flash">Flash</string>
+    <string name="viewer_info_label_coords">Coordinates</string>
+    <string name="viewer_info_label_exif">EXIF</string>
+    <string name="viewer_info_value_no_exif">No data in the file</string>
+    <string name="viewer_info_exif_aperture">ƒ/%1$s</string>
+    <string name="viewer_info_exif_shutter">%1$s s</string>
+    <string name="viewer_info_exif_iso">ISO %1$s</string>
+    <string name="viewer_info_exif_focal">%1$s mm</string>
+    <string name="viewer_info_exif_flash_fired">Fired</string>
+    <string name="viewer_info_exif_flash_off">Did not fire</string>
     <string name="viewer_info_label_uuid">Vault ID</string>
+    <string name="viewer_info_btn_all_metadata">All metadata</string>
+    <string name="viewer_meta_dialog_title">All metadata</string>
+    <string name="viewer_meta_section_other">Also in the file</string>
+    <string name="viewer_meta_block_bytes">%1$d bytes</string>
+    <string name="viewer_meta_blocks_note">These blocks are listed but not opened: closed and vendor-specific formats are never parsed, only their presence and size are shown.</string>
+    <string name="viewer_meta_reading">Reading…</string>
+    <string name="viewer_meta_empty">The file carries no metadata.</string>
+    <string name="viewer_meta_unsupported">Metadata is not read for this format yet.</string>
+    <string name="viewer_meta_truncated">Only the beginning of the file was scanned.</string>
+    <string name="viewer_meta_btn_back">Back</string>
     <string name="viewer_info_value_probing">Probing…</string>
     <string name="viewer_info_value_unknown">Unknown</string>
-    <string name="viewer_info_privacy_note">The original filename is preserved in encrypted entrymeta (5.5e.5+); the on-disk blob still uses a random UUID so plaintext names never appear in the filesystem. EXIF/IPTC/XMP/MakerNotes inside the file ARE preserved byte-for-byte inside the encrypted blob — they reappear when you share the file out. Stripping metadata at import (default-on, with opt-out) is a planned step.</string>
 
     <string name="viewer_share_chooser">Share via…</string>
 

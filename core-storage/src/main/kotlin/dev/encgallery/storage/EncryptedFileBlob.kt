@@ -58,6 +58,32 @@ class EncryptedFileBlob(private val keystore: KeystoreAesGcm) {
         return if (all.size <= count) all else all.copyOf(count)
     }
 
+    fun peekTail(input: File, count: Int, wholeFileCap: Long = 24L * 1024 * 1024): ByteArray {
+        if (isChunked(input)) {
+            val reader = openChunked(input)
+            return try {
+                val want = minOf(count.toLong(), reader.plaintextSize).toInt()
+                if (want <= 0) return ByteArray(0)
+                val from = reader.plaintextSize - want
+                val buf = ByteArray(want)
+                var off = 0
+                while (off < want) {
+                    val n = reader.readAt(from + off, buf, off, want - off)
+                    if (n <= 0) break
+                    off += n
+                }
+                if (off == want) buf else buf.copyOf(off)
+            } finally {
+                reader.close()
+            }
+        }
+        if (input.length() > wholeFileCap) {
+            throw IOException("blob ${input.name} is too large to peek without chunking")
+        }
+        val all = decryptToBytes(input)
+        return if (all.size <= count) all else all.copyOfRange(all.size - count, all.size)
+    }
+
     fun isChunked(input: File): Boolean = try {
         readVersionByte(input) == ChunkedBlob.VERSION_3
     } catch (t: Throwable) {
