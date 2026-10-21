@@ -5,6 +5,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -192,6 +195,34 @@ fun GalleryGrid(
     }
 
     val inSelectionMode = explicitSelectionMode || selectedUuids.isNotEmpty()
+    val tileBounds = remember { mutableMapOf<String, androidx.compose.ui.geometry.Rect>() }
+    var dragAnchorUuid by remember { mutableStateOf<String?>(null) }
+    val onTilePositioned: (String, androidx.compose.ui.geometry.Rect?) -> Unit = { uuid, bounds ->
+        if (bounds == null) tileBounds.remove(uuid) else tileBounds[uuid] = bounds
+    }
+    val onRangeDragStart: (String) -> Unit = { uuid -> dragAnchorUuid = uuid }
+    val onRangeDragMove: (String, Offset) -> Unit = { originUuid, localPosition ->
+        val originBounds = tileBounds[originUuid]
+        val anchorUuid = dragAnchorUuid
+        if (originBounds != null && anchorUuid != null) {
+            val windowPosition = Offset(
+                originBounds.left + localPosition.x,
+                originBounds.top + localPosition.y
+            )
+            val targetUuid = tileBounds.entries.firstOrNull { (_, bounds) ->
+                bounds.contains(windowPosition)
+            }?.key
+            val anchorIndex = entries.indexOfFirst { it.uuid == anchorUuid }
+            val targetIndex = entries.indexOfFirst { it.uuid == targetUuid }
+            if (anchorIndex >= 0 && targetIndex >= 0) {
+                val first = minOf(anchorIndex, targetIndex)
+                val last = maxOf(anchorIndex, targetIndex)
+                selectedUuids = entries.subList(first, last + 1).map { it.uuid }.toSet()
+                explicitSelectionMode = true
+            }
+        }
+    }
+    val onRangeDragEnd = { dragAnchorUuid = null }
     val clearSelection = {
         selectedUuids = emptySet()
         actionStage = GridActionStage.NONE
@@ -224,6 +255,10 @@ fun GalleryGrid(
                 inSelectionMode = inSelectionMode,
                 onView = onView,
                 onToggle = { toggle(it) },
+                onTilePositioned = onTilePositioned,
+                onRangeDragStart = onRangeDragStart,
+                onRangeDragMove = onRangeDragMove,
+                onRangeDragEnd = onRangeDragEnd,
                 anchorKey = anchorKey,
                 modifier = Modifier.fillMaxSize()
             )
@@ -259,7 +294,11 @@ fun GalleryGrid(
                         onClick = {
                             if (inSelectionMode) toggle(entry.uuid) else onView(entry)
                         },
-                        onLongClick = { toggle(entry.uuid) }
+                        onLongClick = { toggle(entry.uuid) },
+                        onTilePositioned = onTilePositioned,
+                        onRangeDragStart = onRangeDragStart,
+                        onRangeDragMove = onRangeDragMove,
+                        onRangeDragEnd = onRangeDragEnd
                     )
                 }
             }
@@ -520,6 +559,10 @@ private fun MosaicJustified(
     inSelectionMode: Boolean,
     onView: (VaultEntry) -> Unit,
     onToggle: (String) -> Unit,
+    onTilePositioned: (String, androidx.compose.ui.geometry.Rect?) -> Unit,
+    onRangeDragStart: (String) -> Unit,
+    onRangeDragMove: (String, Offset) -> Unit,
+    onRangeDragEnd: () -> Unit,
     anchorKey: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -584,7 +627,11 @@ private fun MosaicJustified(
                                 onClick = {
                                     if (inSelectionMode) onToggle(entry.uuid) else onView(entry)
                                 },
-                                onLongClick = { onToggle(entry.uuid) }
+                                onLongClick = { onToggle(entry.uuid) },
+                                onTilePositioned = onTilePositioned,
+                                onRangeDragStart = onRangeDragStart,
+                                onRangeDragMove = onRangeDragMove,
+                                onRangeDragEnd = onRangeDragEnd
                             )
                         }
                     }
@@ -603,6 +650,10 @@ private fun GalleryTile(
     enlarged: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    onTilePositioned: (String, androidx.compose.ui.geometry.Rect?) -> Unit,
+    onRangeDragStart: (String) -> Unit,
+    onRangeDragMove: (String, Offset) -> Unit,
+    onRangeDragEnd: () -> Unit,
 
     mosaicFill: Boolean = false
 ) {
@@ -676,9 +727,35 @@ private fun GalleryTile(
         Modifier.fillMaxWidth().aspectRatio(tileAspect)
     }
 
+    DisposableEffect(entry.uuid) {
+        onDispose { onTilePositioned(entry.uuid, null) }
+    }
+
     Box(
         modifier = sizeModifier
-
+            .onGloballyPositioned { coords ->
+                val pos = coords.positionInWindow()
+                onTilePositioned(
+                    entry.uuid,
+                    androidx.compose.ui.geometry.Rect(
+                        left = pos.x,
+                        top = pos.y,
+                        right = pos.x + coords.size.width,
+                        bottom = pos.y + coords.size.height
+                    )
+                )
+            }
+            .pointerInput(entry.uuid) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { onRangeDragStart(entry.uuid) },
+                    onDragEnd = onRangeDragEnd,
+                    onDragCancel = onRangeDragEnd,
+                    onDrag = { change, _ ->
+                        change.consume()
+                        onRangeDragMove(entry.uuid, change.position)
+                    }
+                )
+            }
             .background(MaterialTheme.colorScheme.surfaceVariant)
 
             .then(
