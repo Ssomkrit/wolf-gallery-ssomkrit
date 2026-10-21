@@ -200,7 +200,11 @@ fun GalleryGrid(
     val onTilePositioned: (String, androidx.compose.ui.geometry.Rect?) -> Unit = { uuid, bounds ->
         if (bounds == null) tileBounds.remove(uuid) else tileBounds[uuid] = bounds
     }
-    val onRangeDragStart: (String) -> Unit = { uuid -> dragAnchorUuid = uuid }
+    val onRangeDragStart: (String) -> Unit = { uuid ->
+        dragAnchorUuid = uuid
+        selectedUuids = setOf(uuid)
+        explicitSelectionMode = true
+    }
     val onRangeDragMove: (String, Offset) -> Unit = { originUuid, localPosition ->
         val originBounds = tileBounds[originUuid]
         val anchorUuid = dragAnchorUuid
@@ -294,7 +298,7 @@ fun GalleryGrid(
                         onClick = {
                             if (inSelectionMode) toggle(entry.uuid) else onView(entry)
                         },
-                        onLongClick = { toggle(entry.uuid) },
+                        
                         onTilePositioned = onTilePositioned,
                         onRangeDragStart = onRangeDragStart,
                         onRangeDragMove = onRangeDragMove,
@@ -769,7 +773,7 @@ private fun GalleryTile(
 
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = onLongClick
+                onLongClick = null
             ),
         contentAlignment = Alignment.Center
     ) {
