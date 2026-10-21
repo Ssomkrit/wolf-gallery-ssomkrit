@@ -197,11 +197,13 @@ fun GalleryGrid(
     val inSelectionMode = explicitSelectionMode || selectedUuids.isNotEmpty()
     val tileBounds = remember { mutableMapOf<String, androidx.compose.ui.geometry.Rect>() }
     var dragAnchorUuid by remember { mutableStateOf<String?>(null) }
+    var rangeTapAnchorUuid by remember { mutableStateOf<String?>(null) }
     val onTilePositioned: (String, androidx.compose.ui.geometry.Rect?) -> Unit = { uuid, bounds ->
         if (bounds == null) tileBounds.remove(uuid) else tileBounds[uuid] = bounds
     }
     val onRangeDragStart: (String) -> Unit = { uuid ->
         dragAnchorUuid = uuid
+        rangeTapAnchorUuid = uuid
         selectedUuids = setOf(uuid)
         explicitSelectionMode = true
     }
@@ -222,6 +224,7 @@ fun GalleryGrid(
                 val first = minOf(anchorIndex, targetIndex)
                 val last = maxOf(anchorIndex, targetIndex)
                 selectedUuids = entries.subList(first, last + 1).map { it.uuid }.toSet()
+                rangeTapAnchorUuid = anchorUuid
                 explicitSelectionMode = true
             }
         }
@@ -229,6 +232,8 @@ fun GalleryGrid(
     val onRangeDragEnd = { dragAnchorUuid = null }
     val clearSelection = {
         selectedUuids = emptySet()
+        dragAnchorUuid = null
+        rangeTapAnchorUuid = null
         actionStage = GridActionStage.NONE
         explicitSelectionMode = false
     }
@@ -244,10 +249,24 @@ fun GalleryGrid(
     ) {
 
         val toggle = { uuid: String ->
-            selectedUuids = if (uuid in selectedUuids) {
-                selectedUuids - uuid
+            val anchor = rangeTapAnchorUuid
+            if (anchor != null && anchor != uuid && selectedUuids == setOf(anchor)) {
+                val anchorIndex = entries.indexOfFirst { it.uuid == anchor }
+                val targetIndex = entries.indexOfFirst { it.uuid == uuid }
+                if (anchorIndex >= 0 && targetIndex >= 0) {
+                    val first = minOf(anchorIndex, targetIndex)
+                    val last = maxOf(anchorIndex, targetIndex)
+                    selectedUuids = entries.subList(first, last + 1).map { it.uuid }.toSet()
+                } else {
+                    selectedUuids = selectedUuids + uuid
+                }
+                rangeTapAnchorUuid = null
             } else {
-                selectedUuids + uuid
+                selectedUuids = if (uuid in selectedUuids) {
+                    selectedUuids - uuid
+                } else {
+                    selectedUuids + uuid
+                }
             }
         }
         if (enlarged) {
