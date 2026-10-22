@@ -672,7 +672,7 @@ private fun GalleryTile(
     inSelectionMode: Boolean,
     enlarged: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onLongClick: () -> Unit = {},
     onTilePositioned: (String, androidx.compose.ui.geometry.Rect?) -> Unit,
     onRangeDragStart: (String) -> Unit,
     onRangeDragMove: (String, Offset) -> Unit,
